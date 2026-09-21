@@ -5,7 +5,6 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const rulesFile = path.join(root, "config/l0.rules.json");
 const exportsRoot = path.join(root, "exports");
 
 function nexusLabPlugin(): Plugin {

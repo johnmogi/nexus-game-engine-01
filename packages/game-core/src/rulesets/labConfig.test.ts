@@ -5,10 +5,12 @@ import { describe, expect, it } from "vitest";
 import { LabConfigError, compileLabDocument, parseLabDocument } from "./labConfig.js";
 import { l0Ruleset } from "./l0.js";
 
-const configPath = resolve(dirname(fileURLToPath(import.meta.url)), "../../../../config/l0.rules.json");
+const dir = dirname(fileURLToPath(import.meta.url));
+const l0Path = resolve(dir, "../../../../config/l0.rules.json");
+const l1Path = resolve(dir, "../../../../config/l1.rules.json");
 
-function loadFile() {
-  return JSON.parse(readFileSync(configPath, "utf8")) as unknown;
+function loadFile(p = l0Path) {
+  return JSON.parse(readFileSync(p, "utf8")) as unknown;
 }
 
 describe("L0 lab rules JSON", () => {
@@ -21,6 +23,7 @@ describe("L0 lab rules JSON", () => {
     expect(ruleset.experimental.maxTurns).toBe(9);
     expect(ruleset.playableRanks).toEqual([1, 2, 3, 4, 5, 6]);
     expect(ruleset.experimental.dealMajors).toBe(true);
+    expect(ruleset.experimental.altarMajorCap).toBe(2);
     expect(l0Ruleset().experimental.maxTurns).toBe(9);
   });
 
@@ -30,9 +33,10 @@ describe("L0 lab rules JSON", () => {
     expect(() => parseLabDocument({ ...(loadFile() as object), majorUsesPD: false })).toThrow(/majorUsesPD/);
   });
 
-  it("rounds × tableAdvancesPerRound is the turn limit", () => {
-    const base = parseLabDocument(loadFile());
-    const { ruleset } = compileLabDocument({ ...base, rounds: 4, tableAdvancesPerRound: 3 });
-    expect(ruleset.experimental.maxTurns).toBe(12);
+  it("L1 is 3 rounds × 9 table advances = 27 turns", () => {
+    const { ruleset } = compileLabDocument(parseLabDocument(loadFile(l1Path)));
+    expect(ruleset.experimental.rounds).toBe(3);
+    expect(ruleset.experimental.tableAdvancesPerRound).toBe(9);
+    expect(ruleset.experimental.maxTurns).toBe(27);
   });
 });

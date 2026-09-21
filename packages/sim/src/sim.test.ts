@@ -96,4 +96,14 @@ describe("sim", () => {
     expect(built.dirName).toContain("3runs");
     expect(built.files["runs.csv"]).toContain("seed,");
   });
+
+  it("L1 27-turn ruleset finishes", () => {
+    const l1 = parseLabDocument(JSON.parse(readFileSync(resolve(repo, "config/l1.rules.json"), "utf8")));
+    const { ruleset, playerCount } = compileLabDocument(l1);
+    expect(ruleset.experimental.maxTurns).toBe(27);
+    const { state } = playGame({ seed: "l1-one", playerCount, ruleset });
+    expect(state.meta.turn).toBe(27);
+    expect(state.meta.round).toBe(3);
+    expect(state.log.some((e) => e.type === "ROUND_ENDED" && e.to === 4)).toBe(false);
+  });
 });

@@ -6,3 +6,4 @@ dist/
 coverage/
 exports/*
 !exports/.gitkeep
+graphics/_source/

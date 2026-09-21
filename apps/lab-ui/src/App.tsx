@@ -49,6 +49,7 @@ function collectLegal(state: GameState, ctx: EngineCtx): Action[] {
 }
 
 export function App() {
+  const [rulesName, setRulesName] = useState<(typeof RULE_FILES)[number]>("l0.rules.json");
   const [fileDoc, setFileDoc] = useState<L0LabDocument | null>(null);
   const [doc, setDoc] = useState<L0LabDocument | null>(null);
   const [seed, setSeed] = useState("nexus-test");
@@ -62,24 +63,25 @@ export function App() {
   const lastExport = useRef<BatchResult["exportFiles"] | null>(null);
   const [customGames, setCustomGames] = useState(25);
 
+  async function loadRules(name: (typeof RULE_FILES)[number]) {
+    const raw = await fetch(`/${name}`).then((r) => {
+      if (!r.ok) throw new Error(`failed to load config/${name}`);
+      return r.json();
+    });
+    const parsed = parseLabDocument(raw);
+    setRulesName(name);
+    setFileDoc(parsed);
+    setDoc(parsed);
+    const next = boot(seed, parsed);
+    ctxRef.current = next.ctx;
+    setState(next.state);
+    setMsg(`loaded config/${name}`);
+    setBatchOut("");
+  }
+
   useEffect(() => {
-    void (async () => {
-      try {
-        const raw = await fetch("/l0.rules.json").then((r) => {
-          if (!r.ok) throw new Error(`failed to load ${RULES_FILE}`);
-          return r.json();
-        });
-        const parsed = parseLabDocument(raw);
-        setFileDoc(parsed);
-        setDoc(parsed);
-        const next = boot("nexus-test", parsed);
-        ctxRef.current = next.ctx;
-        setState(next.state);
-        setMsg(`loaded ${RULES_FILE}`);
-      } catch (e) {
-        setLoadErr(String(e));
-      }
-    })();
+    void loadRules("l0.rules.json").catch((e) => setLoadErr(String(e)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!doc || !state || !ctxRef.current) {
@@ -108,7 +110,7 @@ export function App() {
     const next = boot(seed, fileDoc);
     ctxRef.current = next.ctx;
     setState(next.state);
-    setMsg(`reset to ${RULES_FILE}`);
+    setMsg(`reset to config/${rulesName}`);
     setBatchOut("");
   }
 
@@ -138,7 +140,7 @@ export function App() {
     if (!ctxRef.current) return;
     let s = state;
     const startTurn = s.meta.turn;
-    for (let i = 0; i < 120; i++) {
+    for (let i = 0; i < 400; i++) {
       if (s.meta.outcome !== "playing") break;
       const legal = collectLegal(s, ctxRef.current);
       if (!legal[0]) break;
@@ -201,7 +203,17 @@ export function App() {
     <div className="lab">
       <header>
         <label>
-          Seed <input value={seed} onChange={(e) => setSeed(e.target.value)} />
+          Rules{" "}
+          <select
+            value={rulesName}
+            onChange={(e) => void loadRules(e.target.value as (typeof RULE_FILES)[number])}
+          >
+            {RULE_FILES.map((f) => (
+              <option key={f} value={f}>
+                {f}
+              </option>
+            ))}
+          </select>
         </label>
         <label>
           Players{" "}
@@ -275,7 +287,7 @@ export function App() {
       </header>
 
       <p>
-        Ruleset file: {RULES_FILE} · {doc.version} · turn limit {doc.rounds}×{doc.tableAdvancesPerRound}=
+        Ruleset file: config/{rulesName} · {doc.version} · turn limit {doc.rounds}×{doc.tableAdvancesPerRound}=
         {live.ruleset.experimental.maxTurns} · Restart to apply in-memory edits
       </p>
 

@@ -30,5 +30,6 @@ export { rngFromSeed, rngNext, rngNextInt, rngShuffle } from "./rng.js";
 export { listOccupancy, instanceCount, assertConservation } from "./zones.js";
 export { formatBoard, formatLog } from "./format.js";
 export { actorId } from "./actor.js";
+export { canPlaceOnLineage } from "./lineage.js";
 export { evaluateInvariants } from "./invariants.js";
 export type { InvariantWarning } from "./invariants.js";

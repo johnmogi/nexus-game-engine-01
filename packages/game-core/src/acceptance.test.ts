@@ -7,6 +7,7 @@ import {
   instanceCount,
   l0Ruleset,
   proxyCatalog,
+  evaluateInvariants,
   type EngineCtx,
   type GameState,
 } from "./index.js";
@@ -160,4 +161,45 @@ describe("M1.5 acceptance", () => {
       }
     }
   });
+
+  it("finished matches have legal lineage stacks only", () => {
+    const { state, ctx } = make(2, "lineage-law");
+    const end = play(state, ctx);
+    expect(evaluateInvariants(end, ctx).filter((w) => w.code === "INVALID_LINEAGE")).toHaveLength(0);
+    for (const p of end.players) {
+      if (!p.lineage.length) continue;
+      const first = catalogRank(ctx, p.lineage[0]!.cardId);
+      expect(first).toBe(1);
+      for (let i = 1; i < p.lineage.length; i++) {
+        const prev = ctx.catalog.get(p.lineage[i - 1]!.cardId);
+        const cur = ctx.catalog.get(p.lineage[i]!.cardId);
+        expect(cur?.lineageId).toBe(prev?.lineageId);
+        expect(cur?.rank).toBe((prev?.rank ?? 0) + ctx.ruleset.experimental.evolutionStep);
+      }
+    }
+  });
+
+  it("Eclipse fires when two Majors sit on the Altar", () => {
+    const { state, ctx } = make(2, "eclipse-cap");
+    expect(ctx.ruleset.experimental.altarMajorCap).toBe(2);
+    const majors = state.drawDeck.filter((c) => ctx.catalog.get(c.cardId)?.arcana === "major");
+    expect(majors.length).toBeGreaterThanOrEqual(2);
+    const next = {
+      ...state,
+      meta: { ...state.meta, phase: "ECLIPSE_NEXUS_CHECK" as const },
+      drawDeck: state.drawDeck.filter((c) => ctx.catalog.get(c.cardId)?.arcana !== "major"),
+      altar: { ...state.altar, major: majors.slice(0, 2) },
+    };
+    const legal = getLegalActions(next, "P1", ctx);
+    expect(legal.some((a) => a.type === "ADVANCE")).toBe(true);
+    const result = dispatch(next, { type: "ADVANCE", playerId: "P1" }, ctx);
+    if (!result.ok) throw new Error(result.error.message);
+    expect(result.state.log.some((e) => e.type === "ECLIPSE")).toBe(true);
+    expect(result.state.players[0]?.eclipse).toBe(true);
+    expect(result.state.players[0]?.joker.active).toBe(true);
+  });
 });
+
+function catalogRank(ctx: EngineCtx, cardId: string): number | undefined {
+  return ctx.catalog.get(cardId)?.rank;
+}
