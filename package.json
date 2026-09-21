@@ -1,0 +1,24 @@
+{
+  "name": "nexus",
+  "private": true,
+  "description": "Headless TypeScript engine for NEXUS. game-core has no React, DB, or network.",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "test": "npm test -w @nexus/game-core && npm test -w @nexus/sim",
+    "typecheck": "npm run typecheck -w @nexus/game-core",
+    "sim": "npm run sim -w @nexus/sim --",
+    "lab": "npm run dev -w @nexus/lab-ui"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,0 +1,136 @@
+html, body, #root {
+  margin: 0;
+  height: 100%;
+  background: #d6d6d6;
+  color: #111;
+  font: 13px/1.35 "Courier New", Courier, monospace;
+}
+
+.lab {
+  padding: 8px;
+}
+
+header, .board, .players, .actions, .bottom, .zone, .seat {
+  border: 2px solid #000;
+  background: #f3f3f3;
+  margin: 6px 0;
+  padding: 6px;
+}
+
+header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+header input, header select, .toggles input {
+  font: inherit;
+}
+
+button {
+  font: inherit;
+  background: #eee;
+  border: 2px outset #ccc;
+  padding: 2px 8px;
+  margin: 2px;
+}
+
+button:disabled {
+  opacity: 0.5;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  gap: 8px;
+}
+
+.slots {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px;
+  text-align: center;
+}
+
+.slots div {
+  border: 1px dashed #333;
+  min-height: 48px;
+  padding: 4px;
+  background: #fff;
+}
+
+.seat.active {
+  outline: 3px solid #00a;
+}
+
+.bottom {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 8px;
+}
+
+.toggles label {
+  display: block;
+  margin: 4px 0;
+}
+
+pre {
+  max-height: 280px;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid #444;
+  padding: 4px;
+  white-space: pre-wrap;
+}
+
+h2 {
+  font-size: 13px;
+  margin: 0 0 4px;
+}
+
+.warnings {
+  color: #fff;
+  background: #b00000;
+  border: 3px solid #400;
+  padding: 6px;
+  margin: 6px 0;
+  font-weight: bold;
+}
+
+.warnings.ok {
+  background: #ddd;
+  color: #333;
+  border-color: #666;
+  font-weight: normal;
+}
+
+.timeline {
+  border: 2px solid #000;
+  background: #eee;
+  padding: 4px 6px;
+  margin: 6px 0;
+}
+
+.tick {
+  display: inline-block;
+  margin-right: 4px;
+  padding: 1px 3px;
+}
+
+.tick.now,
+.timeline-rounds .now {
+  outline: 2px solid #c00;
+  background: #ff0;
+  font-weight: bold;
+}
+
+.timeline-rounds {
+  margin-top: 2px;
+}
+
+.timeline-rounds span {
+  display: inline-block;
+  width: 4.5em;
+  text-align: center;
+}

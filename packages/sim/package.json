@@ -1,0 +1,14 @@
+{
+  "name": "@nexus/sim",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "description": "Batch adventure simulation. Policies use a separate RNG.",
+  "scripts": {
+    "sim": "tsx src/cli.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@nexus/game-core": "*"
+  }
+}
