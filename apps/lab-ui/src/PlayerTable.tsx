@@ -14,7 +14,7 @@ import { storyLines } from "./story";
 const catalog = proxyCatalog();
 
 function playerAct(a: Action, state: GameState): string {
-  if (a.type === "SKIP_MANIP") return "Pass";
+  if (a.type === "SKIP_MANIP") return "No elemental — continue";
   if (a.type === "MANIP") {
     if (a.element === "air") return "Air — bury LEFT under the deck";
     if (a.element === "fire") return "Fire — send LEFT to the top of the deck";
@@ -30,45 +30,51 @@ function playerAct(a: Action, state: GameState): string {
     if (a.dest === "lineage") return "Grow lineage with LEFT";
   }
   if (a.type === "COMMIT") {
-    if (a.cardId === "pass") return `${a.playerId} pass (0)`;
+    if (a.cardId === "pass") return "Add 0 to the bowl";
     const card = state.players.find((p) => p.id === a.playerId)?.hand.find((c) => c.instanceId === a.cardId);
-    return `${a.playerId} play ${card ? face(card) : a.cardId}`;
+    return `Add ${card ? face(card) : a.cardId} to the bowl`;
   }
   if (a.type === "CHOOSE_CHARACTER") {
     return `Aspect → ${catalog.get(a.cardId)?.name ?? a.cardId}`;
   }
   if (a.type === "ADVANCE") {
     if (state.meta.phase === "ROLL_EVENT") return "Roll the event die";
-    return `Continue (${state.meta.phase})`;
+    if (state.meta.phase === "ELEMENTAL_MANIPULATION") return "Continue (after elemental)";
+    if (state.meta.phase === "REWARD") return "Continue (no LEFT left)";
+    if (state.meta.phase === "TURN_END" || state.meta.phase === "ECLIPSE_NEXUS_CHECK") return "End turn / continue";
+    return `Continue · ${state.meta.phase}`;
   }
   return a.type;
 }
 
 const EVENT_COPY: Record<string, string> = {
-  dialogue: "Dialogue — beat LEFT + MIDDLE together.",
-  barrier: "Barrier — beat LEFT alone. You have +1.",
-  treasure: "Treasure — LEFT is yours.",
+  dialogue: "Dialogue — both living seats add force to one bowl vs LEFT + MIDDLE.",
+  barrier: "Barrier — only the active seat adds force vs LEFT (then +1 opportunity).",
+  treasure: "Treasure — LEFT is yours (no bowl).",
 };
 
 function growthNeed(ctx: EngineCtx, p: PlayerState): string {
   const n = nextLineageNeed(ctx, p);
-  if (!n) return "Lineage has no further pip rank.";
+  const tip = ctx.ruleset.experimental.evolveByColor
+    ? "Rules: any color at +2 (L1 secondary elemental)."
+    : "Rules: same lineageId only (L0 — roses stays roses).";
+  if (!n) return `Lineage has no further pip rank. ${tip}`;
   const color = ctx.ruleset.experimental.evolveByColor
     ? "of any color (secondary elemental)"
     : "of this lineage only";
-  if (n.inHand) return `Next form is ${n.rank} ${color} — sitting in hand, auto-evolves.`;
-  return `Next form is ${n.rank} ${color} — none in this hand.`;
+  if (n.inHand) return `Next form is ${n.rank} ${color} — sitting in hand, auto-evolves. ${tip}`;
+  return `Next form is ${n.rank} ${color} — none in this hand. ${tip}`;
 }
 
 function advisorCopy(state: GameState, ctx: EngineCtx, prompt: ReturnType<typeof eventPrompt>): string {
   if (state.meta.phase === "ELEMENTAL_MANIPULATION") {
-    return "Optional: use one element on the table, or Pass.";
+    return "Optional elemental on the table, or “No elemental — continue”. This is not end of turn.";
   }
   if (prompt.kind === "barrier") {
-    return `Barrier combat · round ${prompt.combatRound}/${prompt.combatRounds}. Challenge ${prompt.challenge}. Bowl so far ${prompt.combatBowl}. Your +1 applies at the end. Play a hand card or pass.`;
+    return `Barrier · die ${prompt.roll ?? "—"} only chose the scene (not force). Challenge ${prompt.challenge} from LEFT. Bowl ${prompt.combatBowl}. Active seat +1 at the end. Commit a card into the bowl, or add 0.`;
   }
   if (prompt.kind === "dialogue") {
-    return `Dialogue combat · round ${prompt.combatRound}/${prompt.combatRounds}. Challenge ${prompt.challenge} (LEFT+MIDDLE). Bowl ${prompt.combatBowl}. Each living seat commits.`;
+    return `Dialogue · die ${prompt.roll ?? "—"} only chose the scene. Challenge ${prompt.challenge} = LEFT+MIDDLE force. Bowl ${prompt.combatBowl}. Each living seat must commit (card or +0).`;
   }
   if (prompt.kind === "treasure") {
     return "Treasure — take LEFT into hand, altar, or lineage if legal.";
@@ -79,7 +85,7 @@ function advisorCopy(state: GameState, ctx: EngineCtx, prompt: ReturnType<typeof
   if (state.meta.phase.includes("ECLIPSE") || state.players.some((p) => p.eclipse && !p.aspect && ctx.ruleset.experimental.enableCharacterEvolution)) {
     return "Eclipse opened the character hold — pick an aspect if offered.";
   }
-  return "Advance the table, optionally use one element, then roll the event die.";
+  return "Continue advances the turn pipeline. Roll the event die when offered — that die picks Dialogue / Barrier / Treasure only.";
 }
 
 function ActButtons(props: {
@@ -92,6 +98,34 @@ function ActButtons(props: {
   const acts = props.filter ? props.legal.filter(props.filter) : props.legal;
   if (!props.canPlay) return <p className="advisor-hint">Watching history — Fwd to the last frame to act.</p>;
   if (!acts.length) return null;
+
+  const commits = acts.filter((a) => a.type === "COMMIT");
+  if (commits.length) {
+    const bySeat = new Map<string, Action[]>();
+    for (const a of commits) {
+      if (a.type !== "COMMIT") continue;
+      const list = bySeat.get(a.playerId) ?? [];
+      list.push(a);
+      bySeat.set(a.playerId, list);
+    }
+    return (
+      <div className="acts-by-seat">
+        {[...bySeat.entries()].map(([pid, seatActs]) => (
+          <div key={pid} className="seat-acts">
+            <div className="seat-acts-label">{pid} — add to the bowl</div>
+            <div className="acts">
+              {seatActs.map((a, i) => (
+                <button key={i} type="button" className="act" onClick={() => props.onAct(a)}>
+                  {playerAct(a, props.state)}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="acts">
       {acts.map((a, i) => (
@@ -135,8 +169,15 @@ export function PlayerTable(props: {
                 {s.id} · HP {s.health}
                 {s.eclipse ? " · Eclipse" : ""}
                 {s.aspect ? ` · ${s.aspect}` : ""}
+                {s.crossColor ? " · CROSS-COLOR" : ""}
               </b>
               <p>{s.lineageLabels.join(" → ") || "no lineage"}</p>
+              {s.lineageIds.length ? (
+                <p className={s.crossColor ? "lineage-ids cross" : "lineage-ids"}>
+                  ids: {s.lineageIds.join(" → ")}
+                  {s.crossColor ? " (secondary elemental)" : " (one lineage)"}
+                </p>
+              ) : null}
             </div>
           ))}
         </div>
@@ -272,14 +313,18 @@ export function PlayerTable(props: {
                 <span className="die-face">{prompt.roll ?? "—"}</span>
                 <div>
                   <b>{prompt.kind}</b>
+                  <p className="die-role">Event die chose the scene — it does not add force (yet).</p>
                   <p>{EVENT_COPY[prompt.kind]}</p>
                   <p>
                     Challenge <b>{prompt.challenge}</b>
                     {prompt.opportunity ? ` · +${prompt.opportunity} opportunity` : ""} · {prompt.seats}
                   </p>
-                  {prompt.combatRounds > 1 ? (
+                  {prompt.kind === "barrier" || prompt.kind === "dialogue" ? (
                     <p>
-                      Combat round {prompt.combatRound}/{prompt.combatRounds} · bowl {prompt.combatBowl}
+                      Bowl so far <b>{prompt.combatBowl}</b>
+                      {prompt.combatRounds > 1
+                        ? ` · round ${prompt.combatRound}/${prompt.combatRounds}`
+                        : ""}
                     </p>
                   ) : null}
                 </div>

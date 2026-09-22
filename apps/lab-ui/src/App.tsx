@@ -124,7 +124,7 @@ export function App() {
     setDoc(parsed);
     const next = boot(seed, parsed);
     install(next.state, next.ctx);
-    setMsg(`loaded config/${name} — opening dealt`);
+    setMsg(`loaded config/${name} — opening dealt · evolveByColor=${String(parsed.evolveByColor)}`);
     setBatchOut("");
     setBatchSeeds([]);
   }
@@ -152,7 +152,10 @@ export function App() {
     if (!doc) return;
     const next = boot(seed, doc);
     install(next.state, next.ctx);
-    setMsg("restarted — opening dealt");
+    const growth = next.ctx.ruleset.experimental.evolveByColor
+      ? "any-color growth ON"
+      : "same-lineage only";
+    setMsg(`restarted — opening dealt · ${growth}`);
   }
 
   function resetToFile() {
@@ -160,7 +163,10 @@ export function App() {
     setDoc(fileDoc);
     const next = boot(seed, fileDoc);
     install(next.state, next.ctx);
-    setMsg(`reset to config/${rulesName}`);
+    const growth = next.ctx.ruleset.experimental.evolveByColor
+      ? "any-color growth ON"
+      : "same-lineage only";
+    setMsg(`reset to config/${rulesName} · ${growth}`);
     setBatchOut("");
   }
 
@@ -228,6 +234,50 @@ export function App() {
     setPlayed([...played.slice(0, cursor), ...extraActs]);
     setCursor(nextFrames.length - 1);
     setMsg("auto turn");
+  }
+
+  /** First-legal autopilot until OVER (full L0/L1 adventure). */
+  function autoAdventure() {
+    if (!ctxRef.current || !state) return;
+    let s = state;
+    const extraFrames: GameState[] = [];
+    const extraActs: Action[] = [];
+    const startTurn = s.meta.turn;
+    for (let i = 0; i < 12_000; i++) {
+      if (s.meta.outcome !== "playing") break;
+      const legal = collectLegal(s, ctxRef.current);
+      if (!legal[0]) break;
+      const result = dispatch(s, legal[0], ctxRef.current);
+      if (!result.ok) break;
+      extraActs.push(legal[0]);
+      s = result.state;
+      extraFrames.push(s);
+    }
+    const nextFrames = [...frames.slice(0, cursor + 1), ...extraFrames];
+    setFrames(nextFrames);
+    setPlayed([...played.slice(0, cursor), ...extraActs]);
+    setCursor(nextFrames.length - 1);
+    const cross = s.players
+      .map((p) => {
+        const ids = [
+          ...new Set(
+            p.lineage
+              .map((c) => catalog.get(c.cardId)?.lineageId)
+              .filter((id): id is string => Boolean(id)),
+          ),
+        ];
+        return ids.length > 1 ? `${p.id}: ${ids.join("→")}` : null;
+      })
+      .filter(Boolean);
+    const turnsRun = Math.max(0, s.meta.turn - startTurn);
+    setMsg(
+      `auto adventure · T${startTurn}→${s.meta.turn} (+${turnsRun}) · ${s.meta.outcome}` +
+        (cross.length
+          ? ` · cross-color ${cross.join("; ")}`
+          : live.ruleset.experimental.evolveByColor
+            ? " · no cross-color this run (try seed mix-L1-0)"
+            : " · same-lineage only (L0)"),
+    );
   }
 
   function loadReplay(runSeed: string) {
@@ -302,7 +352,17 @@ export function App() {
   const lastActState = cursor > 0 ? frames[cursor - 1] : undefined;
 
   function patch<K extends keyof L0LabDocument>(key: K, value: L0LabDocument[K]) {
-    setDoc({ ...doc, [key]: value });
+    const next = { ...doc, [key]: value };
+    setDoc(next);
+    if (key === "evolveByColor" || key === "playerCount" || key === "rounds" || key === "tableAdvancesPerRound") {
+      const booted = boot(seed, next);
+      install(booted.state, booted.ctx);
+      setMsg(
+        key === "evolveByColor"
+          ? `evolveByColor=${String(value)} — table restarted`
+          : `${String(key)} updated — table restarted`,
+      );
+    }
   }
 
   return (
@@ -356,6 +416,17 @@ export function App() {
         <button type="button" onClick={autoTurn} disabled={!canPlay}>
           Auto Turn
         </button>
+        <button type="button" onClick={autoAdventure} disabled={!canPlay} title="Autopilot until game over">
+          Auto Adventure
+        </button>
+        <span
+          className={`growth-flag ${live.ruleset.experimental.evolveByColor ? "cross" : "same"}`}
+          title="Live ruleset from current Lab document (Restart after Settings edits)"
+        >
+          {live.ruleset.experimental.evolveByColor
+            ? "Growth: any color (L1 secondary elemental)"
+            : "Growth: same lineage only (L0)"}
+        </span>
         <label>
           View{" "}
           <select value={view} onChange={(e) => setView(e.target.value as "admin" | "player")}>
@@ -414,6 +485,10 @@ export function App() {
           {doc.playableLineageIds.length
             ? `Sun only (${doc.playableLineageIds.join(", ")})`
             : "all 8 (Sun + Moon)"}{" "}
+          · evolveByColor={String(live.ruleset.experimental.evolveByColor)}
+          {fileDoc && fileDoc.evolveByColor !== doc.evolveByColor
+            ? " · ⚠ Settings override — Reset to file to restore"
+            : ""}{" "}
           · Restart to apply in-memory edits
         </p>
       ) : null}

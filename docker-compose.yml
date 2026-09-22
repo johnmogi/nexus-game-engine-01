@@ -1,0 +1,11 @@
+services:
+  lab:
+    build: .
+    ports:
+      - "5173:5173"
+    volumes:
+      # Live-edit config + exports without rebuild
+      - ./config:/app/config:ro
+      - ./exports:/app/exports
+    environment:
+      - NODE_ENV=development

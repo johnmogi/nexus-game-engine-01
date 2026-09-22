@@ -1,0 +1,12 @@
+node_modules
+**/node_modules
+exports/**
+!exports/.gitkeep
+.git
+graphics/_source
+*.log
+.DS_Store
+dist
+**/dist
+.cursor
+agent-transcripts

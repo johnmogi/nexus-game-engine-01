@@ -161,7 +161,8 @@ export function parseLabDocument(raw: unknown): L0LabDocument {
     eclipseBonus: num(o.eclipseBonus, "eclipseBonus", 0, 9),
     enableLineage: bool(o.enableLineage, "enableLineage"),
     evolutionStep: num(o.evolutionStep, "evolutionStep", 1, 9),
-    evolveByColor: o.evolveByColor === undefined ? true : bool(o.evolveByColor, "evolveByColor"),
+    // Missing → same-lineage only (L0). L1 files must set true explicitly.
+    evolveByColor: o.evolveByColor === undefined ? false : bool(o.evolveByColor, "evolveByColor"),
     dealStartingAce: o.dealStartingAce === undefined ? true : bool(o.dealStartingAce, "dealStartingAce"),
     autoClaimAceLineage: bool(o.autoClaimAceLineage, "autoClaimAceLineage"),
     enableVeilRecycle: bool(o.enableVeilRecycle, "enableVeilRecycle"),

@@ -24,7 +24,9 @@ npm test
 npm run lab
 ```
 
-Lab: [http://localhost:5173/](http://localhost:5173/) — Step, Auto Turn, Run 1/10/50/100, export batches. Restart the Lab after pulling so it can load `config/l0.rules.json` / `config/l1.rules.json`.
+Lab: [http://localhost:5173/](http://localhost:5173/) — Step, Auto Turn, **Auto Adventure** (full match to OVER), Run 1/10/50/100, export batches. Restart the Lab after pulling so it can load `config/l0.rules.json` / `config/l1.rules.json`.
+
+Toolbar shows **Growth: same lineage only (L0)** vs **Growth: any color (L1)**. If Settings toggled `evolveByColor`, use **Reset to file** to restore the JSON on disk.
 
 ```bash
 npm run sim -- --seed nexus-test --trace
@@ -33,6 +35,14 @@ npm run sim -- --games 100 --seed nexus-test --rules config/l1.rules.json --batc
 ```
 
 Use `npm run sim`, not `npm sim`. Every batch writes `exports/<timestamp>_<version>_<n>runs/` (`runs.csv`, `summary.json`, `manifest.json`, …).
+
+### Docker (remote / VM)
+
+```bash
+docker compose up --build
+```
+
+Then open [http://localhost:5173/](http://localhost:5173/). Same Lab; useful when working from another machine without a full Node install.
 
 ## Layout
 
@@ -51,7 +61,7 @@ Use `npm run sim`, not `npm sim`. Every batch writes `exports/<timestamp>_<versi
 
 - Round Table conveyor: **DRAW → PD → MIDDLE → LEFT**
 - Majors never enter a hand; PD, then next-turn Altar
-- Lineage is **Ace → +2 same lineage** (Ace → 3 → 5). Illegal Reward dumps go to the Veil
+- Lineage is **Ace → +2**. **L0 same lineageId only** (`evolveByColor: false`). **L1 any color** (`evolveByColor: true` — secondary elemental). Illegal Reward dumps go to the Veil
 - Ace–6 dealt; 7–9 stay catalog-only
 - **L0 deals four Sun lineages** (roses, vines, vessels, crystals) as a soft entry. **L1 deals all eight**
 - L1 **day dial**: 2p day/day/night/night; 3p day/night; 4p day/day/night with a per-round shift so a seat is not glued to day. Day +1 sunlight commits, night +1 moonlight commits
