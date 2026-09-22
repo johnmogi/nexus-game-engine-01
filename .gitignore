@@ -7,3 +7,4 @@ coverage/
 exports/*
 !exports/.gitkeep
 graphics/_source/
+.vercel

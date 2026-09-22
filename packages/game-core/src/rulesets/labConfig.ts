@@ -51,6 +51,12 @@ export interface L0LabDocument {
   eclipseOnAltar: boolean;
   eventCombatRounds: 1 | 2;
   enableElementalDice: boolean;
+  /** Tutorial: damage cannot kill (floor HP at 1). */
+  preventDeath: boolean;
+  /** Water manip may revive a downed ally before Veil→LEFT. */
+  enableRevival: boolean;
+  /** HP after Water revive (1 = crawl, 3 = full L1 start). */
+  revivalHealth: number;
   simulation: LabSimulationOptions;
   unimplemented: Record<string, string>;
 }
@@ -186,6 +192,9 @@ export function parseLabDocument(raw: unknown): L0LabDocument {
     })(),
     enableElementalDice:
       o.enableElementalDice === undefined ? false : bool(o.enableElementalDice, "enableElementalDice"),
+    preventDeath: o.preventDeath === undefined ? false : bool(o.preventDeath, "preventDeath"),
+    enableRevival: o.enableRevival === undefined ? false : bool(o.enableRevival, "enableRevival"),
+    revivalHealth: o.revivalHealth === undefined ? 1 : num(o.revivalHealth, "revivalHealth", 1, 99),
     simulation: {
       exportFullTrace: bool(sim.exportFullTrace, "simulation.exportFullTrace"),
       exportWarningTraces: bool(sim.exportWarningTraces, "simulation.exportWarningTraces"),
@@ -252,6 +261,9 @@ export function compileLabDocument(doc: L0LabDocument): {
       eventCombatRounds: doc.eventCombatRounds,
       enableElementalDice: doc.enableElementalDice,
       elementCycle: null,
+      preventDeath: doc.preventDeath,
+      enableRevival: doc.enableRevival,
+      revivalHealth: doc.revivalHealth,
     },
   });
   return { ruleset, playerCount: doc.playerCount, simulation: doc.simulation, document: doc };

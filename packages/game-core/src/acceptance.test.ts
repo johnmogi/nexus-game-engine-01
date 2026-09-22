@@ -183,14 +183,14 @@ describe("M1.5 acceptance", () => {
     }
   });
 
-  it("Eclipse fires when red + black courts sit on the Altar and grants Joker to hand", () => {
+  it("Eclipse fires when same-rank red + black courts sit on the Altar and grants Joker to hand", () => {
     const ruleset = l0Ruleset();
     const catalog = proxyCatalog();
     const ctx: EngineCtx = { ruleset, catalog };
     const state = createGame({ seed: "eclipse-cap", playerCount: 2, ruleset, catalog });
     expect(ctx.ruleset.experimental.altarMajorCap).toBe(2);
     const black = state.drawDeck.find((c) => c.cardId === "SUN-ROSES-J");
-    const red = state.drawDeck.find((c) => c.cardId === "SUN-CRYSTALS-Q");
+    const red = state.drawDeck.find((c) => c.cardId === "SUN-CRYSTALS-J");
     expect(black && red).toBeTruthy();
     const next = {
       ...state,
@@ -205,6 +205,7 @@ describe("M1.5 acceptance", () => {
     expect(result.state.players[0]?.eclipse).toBe(true);
     expect(result.state.players[0]?.joker.active).toBe(true);
     expect(result.state.players[0]?.hand.some((c) => c.cardId === "JOKER")).toBe(true);
+    expect(result.state.altar.major).toHaveLength(0);
   });
 
   it("two same-ink courts on the Altar do not Eclipse", () => {
@@ -225,6 +226,52 @@ describe("M1.5 acceptance", () => {
     if (!result.ok) throw new Error(result.error.message);
     expect(result.state.log.some((e) => e.type === "ECLIPSE")).toBe(false);
     expect(result.state.players[0]?.eclipse).toBe(false);
+  });
+
+  it("mixed-rank red + black courts on the Altar do not Eclipse", () => {
+    const ruleset = l0Ruleset();
+    const catalog = proxyCatalog();
+    const ctx: EngineCtx = { ruleset, catalog };
+    const state = createGame({ seed: "eclipse-mixed-rank", playerCount: 2, ruleset, catalog });
+    const black = state.drawDeck.find((c) => c.cardId === "SUN-ROSES-J");
+    const red = state.drawDeck.find((c) => c.cardId === "SUN-CRYSTALS-Q");
+    expect(black && red).toBeTruthy();
+    const next = {
+      ...state,
+      meta: { ...state.meta, phase: "ECLIPSE_NEXUS_CHECK" as const },
+      drawDeck: state.drawDeck.filter((c) => c.cardId !== black!.cardId && c.cardId !== red!.cardId),
+      altar: { ...state.altar, major: [black!, red!] },
+    };
+    const result = dispatch(next, { type: "ADVANCE", playerId: "P1" }, ctx);
+    if (!result.ok) throw new Error(result.error.message);
+    expect(result.state.log.some((e) => e.type === "ECLIPSE")).toBe(false);
+  });
+
+  it("L1 Altar Eclipse fires on Sun + Moon titled Majors (gold ink)", () => {
+    const ruleset = l0Ruleset({
+      experimental: {
+        ...l0Ruleset().experimental,
+        dealCourts: false,
+        dealMajors: true,
+        enableCharacterEvolution: true,
+      },
+    });
+    const catalog = proxyCatalog();
+    const ctx: EngineCtx = { ruleset, catalog };
+    const state = createGame({ seed: "eclipse-majors", playerCount: 2, ruleset, catalog });
+    const sun = { instanceId: "s", cardId: "SUN-MAJ-02" };
+    const moon = { instanceId: "m", cardId: "MOON-MAJ-02" };
+    const next = {
+      ...state,
+      meta: { ...state.meta, phase: "ECLIPSE_NEXUS_CHECK" as const },
+      altar: { ...state.altar, major: [sun, moon] },
+    };
+    const result = dispatch(next, { type: "ADVANCE", playerId: "P1" }, ctx);
+    if (!result.ok) throw new Error(result.error.message);
+    expect(result.state.log.some((e) => e.type === "ECLIPSE")).toBe(true);
+    expect(result.state.players[0]?.eclipse).toBe(true);
+    expect(result.state.altar.major).toHaveLength(0);
+    expect(result.state.veil.some((c) => c.cardId === "SUN-MAJ-02")).toBe(true);
   });
 });
 

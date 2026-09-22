@@ -12,16 +12,86 @@ export function defInk(def: CardDef): "red" | "black" | null {
   return null;
 }
 
-/** Altar Eclipse needs at least one red and one black court/major with ink — not any two cards. */
+/** Altar Eclipse: red+black courts of the same face (L0), or Sun↔Moon titled Major pair / same rank (L1). */
 export function altarHasRedBlackPair(ctx: EngineCtx, majors: readonly CardInstance[]): boolean {
-  let red = false;
-  let black = false;
+  const courtsByRank = new Map<number, { red: boolean; black: boolean }>();
   for (const c of majors) {
-    const ink = defInk(defOf(ctx.catalog, c));
-    if (ink === "red") red = true;
-    if (ink === "black") black = true;
+    const def = defOf(ctx.catalog, c);
+    if (!def.tags.includes("court")) continue;
+    const ink = defInk(def);
+    if (!ink) continue;
+    const row = courtsByRank.get(def.rank) ?? { red: false, black: false };
+    if (ink === "red") row.red = true;
+    if (ink === "black") row.black = true;
+    courtsByRank.set(def.rank, row);
   }
-  return red && black;
+  for (const row of courtsByRank.values()) {
+    if (row.red && row.black) return true;
+  }
+  for (let i = 0; i < majors.length; i++) {
+    for (let j = i + 1; j < majors.length; j++) {
+      const a = defOf(ctx.catalog, majors[i]!);
+      const b = defOf(ctx.catalog, majors[j]!);
+      if (a.tags.includes("court") || b.tags.includes("court")) continue;
+      if (a.arcana !== "major" || b.arcana !== "major") continue;
+      if (a.pairId === b.id || b.pairId === a.id) return true;
+      if (a.rank === b.rank && a.deck !== b.deck) return true;
+    }
+  }
+  return false;
+}
+
+/** Pull the Altar cards that completed Eclipse into the Veil so the pair is not a permanent aura. */
+export function consumeAltarEclipsePair(state: GameState, ctx: EngineCtx): CardInstance[] {
+  const majors = state.altar.major;
+  let pairI = -1;
+  let pairJ = -1;
+
+  const courtsByRank = new Map<number, number[]>();
+  for (let i = 0; i < majors.length; i++) {
+    const def = defOf(ctx.catalog, majors[i]!);
+    if (!def.tags.includes("court")) continue;
+    const list = courtsByRank.get(def.rank) ?? [];
+    list.push(i);
+    courtsByRank.set(def.rank, list);
+  }
+  outerCourt: for (const idxs of courtsByRank.values()) {
+    for (let a = 0; a < idxs.length; a++) {
+      for (let b = a + 1; b < idxs.length; b++) {
+        const inkA = defInk(defOf(ctx.catalog, majors[idxs[a]!]!));
+        const inkB = defInk(defOf(ctx.catalog, majors[idxs[b]!]!));
+        if (inkA && inkB && inkA !== inkB) {
+          pairI = idxs[a]!;
+          pairJ = idxs[b]!;
+          break outerCourt;
+        }
+      }
+    }
+  }
+
+  if (pairI < 0) {
+    outer: for (let i = 0; i < majors.length; i++) {
+      for (let j = i + 1; j < majors.length; j++) {
+        const a = defOf(ctx.catalog, majors[i]!);
+        const b = defOf(ctx.catalog, majors[j]!);
+        if (a.tags.includes("court") || b.tags.includes("court")) continue;
+        if (a.arcana !== "major" || b.arcana !== "major") continue;
+        if (a.pairId === b.id || b.pairId === a.id || (a.rank === b.rank && a.deck !== b.deck)) {
+          pairI = i;
+          pairJ = j;
+          break outer;
+        }
+      }
+    }
+  }
+  if (pairI < 0 || pairJ < 0) return [];
+  const hi = Math.max(pairI, pairJ);
+  const lo = Math.min(pairI, pairJ);
+  const taken = [majors.splice(hi, 1)[0]!, majors.splice(lo, 1)[0]!];
+  for (const c of taken) {
+    if (c) state.veil.push(c);
+  }
+  return taken.filter(Boolean);
 }
 
 export function activePlayer(state: GameState) {
@@ -189,11 +259,12 @@ export function overflowAltar(
   return extra;
 }
 
-export function hurt(state: GameState, playerId: string, amount: number): number {
+export function hurt(state: GameState, playerId: string, amount: number, ctx?: EngineCtx): number {
   const p = state.players.find((x) => x.id === playerId);
   if (!p || amount <= 0) return 0;
   const before = p.health;
-  p.health = Math.max(0, p.health - amount);
+  const floor = ctx?.ruleset.experimental.preventDeath ? 1 : 0;
+  p.health = Math.max(floor, p.health - amount);
   return before - p.health;
 }
 
@@ -224,7 +295,7 @@ export function airBury(state: GameState): boolean {
   return true;
 }
 
-/** Pamphlet Water: return a card from the Veil onto LEFT. Healing is not an L0 verb. */
+/** Pamphlet Water: return a card from the Veil onto LEFT. */
 export function waterBring(state: GameState): boolean {
   if (!state.veil.length) return false;
   const up = state.veil.pop();
@@ -233,6 +304,30 @@ export function waterBring(state: GameState): boolean {
   state.roundTable.left = [up];
   if (displaced) state.veil.push(displaced);
   return true;
+}
+
+/** Downed seats (HP ≤ 0). Living filters exclude these. */
+export function downedPlayers(state: GameState) {
+  return state.players.filter((p) => p.health <= 0);
+}
+
+/**
+ * Water manip: if revival is on and someone is down, stand them up to revivalHealth.
+ * Otherwise Veil → LEFT (pamphlet table control). Healing-on-living is still a later verb.
+ */
+export function applyWaterManip(
+  state: GameState,
+  ctx: EngineCtx,
+): { ok: boolean; revivedPlayerId?: string; healthGranted?: number } {
+  if (ctx.ruleset.experimental.enableRevival) {
+    const down = downedPlayers(state)[0];
+    if (down) {
+      const hp = Math.max(1, ctx.ruleset.experimental.revivalHealth || 1);
+      down.health = hp;
+      return { ok: true, revivedPlayerId: down.id, healthGranted: hp };
+    }
+  }
+  return { ok: waterBring(state) };
 }
 
 /** Seats Earth can reorder. PD is locked while a Major sits there. */

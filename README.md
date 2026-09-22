@@ -36,13 +36,16 @@ npm run sim -- --games 100 --seed nexus-test --rules config/l1.rules.json --batc
 
 Use `npm run sim`, not `npm sim`. Every batch writes `exports/<timestamp>_<version>_<n>runs/` (`runs.csv`, `summary.json`, `manifest.json`, …).
 
-### Docker (remote / VM)
+### Web (Vercel)
+
+Lab deploys as a static Vite build of `apps/lab-ui`. Batch **Export** downloads files in the browser on Vercel (local `npm run lab` still writes under `exports/`).
 
 ```bash
-docker compose up --build
+npm run build:lab
+vercel --prod
 ```
 
-Then open [http://localhost:5173/](http://localhost:5173/). Same Lab; useful when working from another machine without a full Node install.
+Project settings are in `vercel.json` (`build:lab` → `apps/lab-ui/dist`).
 
 ## Layout
 
@@ -66,12 +69,12 @@ Then open [http://localhost:5173/](http://localhost:5173/). Same Lab; useful whe
 - **L0 deals four Sun lineages** (roses, vines, vessels, crystals) as a soft entry. **L1 deals all eight**
 - L1 **day dial**: 2p day/day/night/night; 3p day/night; 4p day/day/night with a per-round shift so a seat is not glued to day. Day +1 sunlight commits, night +1 moonlight commits
 - Barrier / Dialogue: hidden COMMIT, then threshold
-- Eclipse: **red + black** courts/Majors on the Altar (or a table pair) → **Joker token into hand** (+1). Altar cap is 2. Then L1 offers **Wise / Daydreamer / Lucid Dreamer / Sheman** (impacts pending)
+- Eclipse: **L0** same-face red+black courts on the Altar (pair spent to Veil); **L1** Sun↔Moon titled Major pair on the Altar (or a table pair). Grants **Joker token into hand** (+1). Altar cap is 2. Then L1 offers **Wise / Daydreamer / Lucid Dreamer / Sheman** (impacts pending)
 - **20 Majors** in catalog: Sun + Moon Nexus (rank 0) sit in hold, outside the deck; Wise / Daydreamer / Lucid Dreamer / Sheman wait for Eclipse; L1 deals the other 14 (ranks 2 and 4–9)
 - Hand limit 7; Veil recycles into draw
 - Invariant warnings in the Lab (`MAJOR_IN_HAND`, `INVALID_LINEAGE`, …)
 
-L0 is a short slice (9 table advances, four Sun lines, no table Majors). L1 is 27 turns, eight lineages, day dial, and 14 table Majors. Character impacts are not encoded yet.
+L0 is a short slice (9 table advances, four Sun lines, no table Majors, 2 starting HP). L1 is 27 turns, eight lineages, day dial, 14 table Majors, one combat round. Character impacts are not encoded yet.
 
 ## Graphics
 

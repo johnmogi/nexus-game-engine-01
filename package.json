@@ -10,7 +10,8 @@
     "test": "npm test -w @nexus/game-core && npm test -w @nexus/sim",
     "typecheck": "npm run typecheck -w @nexus/game-core",
     "sim": "npm run sim -w @nexus/sim --",
-    "lab": "npm run dev -w @nexus/lab-ui"
+    "lab": "npm run dev -w @nexus/lab-ui",
+    "build:lab": "npm run build -w @nexus/lab-ui"
   },
   "engines": {
     "node": ">=20"

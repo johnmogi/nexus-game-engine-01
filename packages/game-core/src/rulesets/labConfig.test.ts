@@ -46,7 +46,7 @@ describe("L0 lab rules JSON", () => {
     expect(ruleset.experimental.enableDayDial).toBe(true);
     expect(ruleset.experimental.dealMajors).toBe(true);
     expect(ruleset.experimental.dealCourts).toBe(false);
-    expect(ruleset.experimental.eventCombatRounds).toBe(2);
+    expect(ruleset.experimental.eventCombatRounds).toBe(1);
     expect(ruleset.experimental.enableElementalDice).toBe(false);
     expect(ruleset.experimental.enableCharacterEvolution).toBe(true);
     expect(ruleset.experimental.evolveByColor).toBe(true);

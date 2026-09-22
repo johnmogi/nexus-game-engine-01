@@ -225,7 +225,7 @@ export function PlayerTable(props: {
               </div>
             </div>
             <div>
-              <h3>Altar majors · Eclipse needs red + black</h3>
+              <h3>Altar majors · Eclipse needs same-face red+black (L0) or Sun↔Moon pair (L1)</h3>
               <div className="altar-row">
                 {state.altar.major.length
                   ? state.altar.major.map((c) => <Card key={c.instanceId} title="major" card={c} />)

@@ -122,8 +122,14 @@ export function buildSummary(rows: RunRecord[]): Record<string, unknown> {
     pressure: {
       averageHpLost: n ? rows.reduce((a, r) => a + r.hpLost, 0) / n : null,
       deaths: rows.reduce((a, r) => a + r.deaths, 0),
-      revivals: null,
-      revivalNote: "L0 has no revival verb; always null",
+      revivals: rows.reduce((a, r) => a + r.revivals, 0),
+      averageRevivalHealth:
+        rows.reduce((a, r) => a + r.revivals, 0) > 0
+          ? rows.reduce((a, r) => a + r.revivalHealthSum, 0) /
+            rows.reduce((a, r) => a + r.revivals, 0)
+          : null,
+      revivalNote:
+        "PLAYER_REVIVED via Water manip when enableRevival. averageRevivalHealth is HP granted per revive (config revivalHealth).",
       averageHandSize: n ? rows.reduce((a, r) => a + r.avgHandSize, 0) / n : null,
       maxHandSize: rows.reduce((a, r) => Math.max(a, r.maxHandSize), 0),
       handLimitHits: rows.reduce((a, r) => a + r.handLimitHits, 0),

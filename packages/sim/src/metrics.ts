@@ -36,7 +36,8 @@ export interface RunRecord {
   rewardsToVeil: number;
   hpLost: number;
   deaths: number;
-  revivals: number | null;
+  revivals: number;
+  revivalHealthSum: number;
   avgHandSize: number;
   maxHandSize: number;
   handLimitHits: number;
@@ -126,7 +127,10 @@ export function recordFromState(
     rewardsToVeil: rewardDest("veil"),
     hpLost: hpStart - hpNow,
     deaths: state.players.filter((p) => p.health <= 0).length,
-    revivals: null,
+    revivals: log.filter((e) => e.type === "PLAYER_REVIVED").length,
+    revivalHealthSum: log
+      .filter((e) => e.type === "PLAYER_REVIVED")
+      .reduce((a, e) => a + (typeof e.health === "number" ? e.health : 0), 0),
     avgHandSize: handSizes.length ? handSizes.reduce((a, b) => a + b, 0) / handSizes.length : 0,
     maxHandSize: Math.max(0, ...handSizes, overflow ? ruleset.experimental.handLimit : 0),
     handLimitHits: overflow,

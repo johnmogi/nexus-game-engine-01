@@ -17,18 +17,20 @@ import {
   hurt,
   livingPlayers,
   matchingTableRoyals,
+  consumeAltarEclipsePair,
   overflowAltar,
   permutations,
   pushEvent,
+  applyWaterManip,
   rollDie,
   seedLeftoverAcesToVeil,
   takeTop,
   top,
-  waterBring,
 } from "./ops.js";
 import { autoEvolveFromHand, canPlaceOnLineage, nextLineageNeed } from "./lineage.js";
 import { barrierChallenge, barrierOpportunity, commitPower, dialogueChallenge, eventKindFromDie } from "./score.js";
 import { ADVANCES_PER_ROUND } from "./rulesets/l0.js";
+import { rngNextInt } from "./rng.js";
 import type {
   Action,
   CardInstance,
@@ -366,11 +368,27 @@ function applyManip(state: GameState, action: Action, ctx: EngineCtx): GameEvent
   }
   if (action.type !== "MANIP") return [];
   let ok = false;
+  let revivedPlayerId: string | undefined;
+  let healthGranted: number | undefined;
+  let order = action.order;
   if (action.element === "air") ok = airBury(state);
   else if (action.element === "fire") ok = firePush(state, ctx);
-  else if (action.element === "water") ok = waterBring(state);
-  else if (action.element === "earth") {
-    ok = Boolean(action.order && earthOrder(state, ctx, action.order));
+  else if (action.element === "water") {
+    const water = applyWaterManip(state, ctx);
+    ok = water.ok;
+    revivedPlayerId = water.revivedPlayerId;
+    healthGranted = water.healthGranted;
+  } else if (action.element === "earth") {
+    const movable = earthMovableSeats(state, ctx);
+    if (!order) {
+      const options = permutations(movable).filter((o) => !o.every((s, i) => s === movable[i]));
+      if (options.length) {
+        const roll = rngNextInt(state.gameRng, options.length);
+        state.gameRng = roll.rng;
+        order = options[roll.value];
+      }
+    }
+    ok = Boolean(order && earthOrder(state, ctx, order));
   }
   state.flags.manipUsedThisTurn = true;
   const events: GameEvent[] = [
@@ -378,9 +396,21 @@ function applyManip(state: GameState, action: Action, ctx: EngineCtx): GameEvent
       type: "MANIP_USED",
       element: action.element,
       ok,
-      order: action.element === "earth" ? action.order : undefined,
+      order: action.element === "earth" ? order : undefined,
+      revivedPlayerId,
+      healthGranted,
     }),
   ];
+  if (revivedPlayerId && healthGranted != null) {
+    events.push(
+      pushEvent(state, {
+        type: "PLAYER_REVIVED",
+        playerId: revivedPlayerId,
+        health: healthGranted,
+        via: "water",
+      }),
+    );
+  }
   if (ok) events.push(...fillRoundTable(state, ctx));
   return events;
 }
@@ -508,7 +538,7 @@ function finishEvent(state: GameState, ctx: EngineCtx): GameEvent[] {
       }),
     );
     if (!success) {
-      const dmg = hurt(state, pid, exp.barrierDamage);
+      const dmg = hurt(state, pid, exp.barrierDamage, ctx);
       events.push(pushEvent(state, { type: "BARRIER_FAIL", playerId: pid, damage: dmg }));
       const obstacle = takeTop(state.roundTable.left);
       if (obstacle) {
@@ -717,6 +747,18 @@ function eclipseCheck(state: GameState, ctx: EngineCtx): GameEvent[] {
       }),
     ];
     events.push(...grantEclipse(state, p.id, ctx));
+    if (source === "altar") {
+      const spent = consumeAltarEclipsePair(state, ctx);
+      if (spent.length) {
+        events.push(
+          pushEvent(state, {
+            type: "ECLIPSE_ALTAR_SPENT",
+            playerId: p.id,
+            cardIds: spent.map((c) => c.cardId),
+          }),
+        );
+      }
+    }
     return events;
   }
   return [

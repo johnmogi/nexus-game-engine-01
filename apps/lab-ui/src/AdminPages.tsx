@@ -160,6 +160,23 @@ export function SettingsPage(props: {
           dialogue all living
         </label>
         <label>
+          <input type="checkbox" checked={doc.preventDeath} onChange={(e) => patch("preventDeath", e.target.checked)} />
+          preventDeath — tutorial: damage cannot kill (floor 1 HP). L0 on / L1 off.
+        </label>
+        <label>
+          <input type="checkbox" checked={doc.enableRevival} onChange={(e) => patch("enableRevival", e.target.checked)} />
+          enableRevival — Water revives a downed ally before Veil→LEFT. L1 on / L0 off.
+        </label>
+        <label>
+          revivalHealth
+          <input
+            type="number"
+            min={1}
+            value={doc.revivalHealth}
+            onChange={(e) => patch("revivalHealth", Number(e.target.value) || 1)}
+          />
+        </label>
+        <label>
           <input type="checkbox" checked={doc.manipulationFree} onChange={(e) => patch("manipulationFree", e.target.checked)} />
           manipFree
         </label>
@@ -269,7 +286,13 @@ type BatchSummary = {
     note?: string;
   };
   lineage?: { gamesWithEvolutionPct?: number; gamesWithClaimPct?: number; averageFinalRank?: number };
-  pressure?: { deaths?: number; averageHpLost?: number };
+  pressure?: {
+    deaths?: number;
+    averageHpLost?: number;
+    revivals?: number;
+    averageRevivalHealth?: number | null;
+    revivalNote?: string;
+  };
   engineHealth?: { gamesWithInvariantFailures?: number };
 };
 
@@ -346,6 +369,16 @@ export function StatsPage(props: { state: GameState; batchOut: string }) {
               tone={(batch.pressure?.deaths ?? 0) > 0 ? "warn" : "good"}
             />
             <StatCard
+              value={String(batch.pressure?.revivals ?? 0)}
+              label="Total revivals"
+              hint={
+                batch.pressure?.averageRevivalHealth != null
+                  ? `Avg HP granted per revive: ${fmtNum(batch.pressure.averageRevivalHealth)} (Water / enableRevival)`
+                  : "No PLAYER_REVIVED this batch (L0 preventDeath, or revival off)."
+              }
+              tone={(batch.pressure?.revivals ?? 0) > 0 ? "good" : "neutral"}
+            />
+            <StatCard
               value={String(batch.engineHealth?.gamesWithInvariantFailures ?? 0)}
               label="Broken games"
               hint="Matches that raised invariant warnings."
@@ -372,6 +405,15 @@ export function StatsPage(props: { state: GameState; batchOut: string }) {
                 <div>
                   <dt>Characters claimed</dt>
                   <dd>{fmtPct(batch.eclipseNexus?.gamesWithCharacterPct)} of games</dd>
+                </div>
+                <div>
+                  <dt>Revivals</dt>
+                  <dd>
+                    {batch.pressure?.revivals ?? 0}
+                    {batch.pressure?.averageRevivalHealth != null
+                      ? ` @ ${fmtNum(batch.pressure.averageRevivalHealth)} HP`
+                      : ""}
+                  </dd>
                 </div>
               </dl>
             </div>

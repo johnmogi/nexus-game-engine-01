@@ -325,11 +325,22 @@ export function App() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify(built),
       });
-      const data = (await res.json()) as { dest?: string };
-      setMsg(data.dest ? `exported ${data.dest}` : "export failed");
-    } catch (e) {
-      setMsg(String(e));
+      if (res.ok) {
+        const data = (await res.json()) as { dest?: string };
+        setMsg(data.dest ? `exported ${data.dest}` : "export failed");
+        return;
+      }
+    } catch {
+      /* static / Vercel: no filesystem middleware */
     }
+    for (const [name, text] of Object.entries(built.files)) {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+      a.download = `${built.dirName}_${name}`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+    setMsg(`downloaded ${Object.keys(built.files).length} files (${built.dirName}) — browser export`);
   }
 
   function seekTurn(turn: number) {

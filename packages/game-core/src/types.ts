@@ -114,7 +114,7 @@ export interface ExperimentalRules {
   keepRoundTableFilled: boolean;
   /** Matching royals on the table: Sun/Moon pair, or courts of opposite pip ink (red+black). */
   eclipseOnTable: boolean;
-  /** Altar Eclipse: at least one red and one black ink among Altar majors (not any two). */
+  /** Altar Eclipse: same-face red+black courts (L0), or Sun↔Moon titled Major pair (L1). */
   eclipseOnAltar: boolean;
   /**
    * Barrier/Dialogue commit exchanges before resolve. 1 = pamphlet one-shot.
@@ -128,6 +128,18 @@ export interface ExperimentalRules {
    * Example later: { air: "fire", fire: "earth", earth: "water", water: "air" }.
    */
   elementCycle: Partial<Record<Element, Element>> | null;
+  /**
+   * Tutorial / soft mode: damage cannot reduce a player below 1 HP.
+   * L0 default on — first-session should not teach via death.
+   */
+  preventDeath: boolean;
+  /**
+   * Water manip may revive a downed ally (health ≤ 0) before falling back to Veil→LEFT.
+   * L1 on; L0 off until pamphlet locks healing/revive verbs.
+   */
+  enableRevival: boolean;
+  /** HP granted on Water revive. 1 = crawl back; startingHealth = full stand-up. */
+  revivalHealth: number;
 }
 
 export interface GameFlags {

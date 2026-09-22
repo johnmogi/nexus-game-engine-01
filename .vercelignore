@@ -1,0 +1,10 @@
+# Keep deploy lean — Lab only needs source + lockfile.
+exports
+graphics/_source
+**/*.test.ts
+**/vitest.config.*
+.dockerignore
+Dockerfile
+docker-compose.yml
+.cursor
+agent-transcripts

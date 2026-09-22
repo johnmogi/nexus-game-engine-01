@@ -1,21 +1,36 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const exportsRoot = path.join(root, "exports");
+const configDir = path.join(root, "config");
+const publicDir = path.resolve(__dirname, "public");
+
+/** Ship config/*.rules.json at the site root (dev middleware + production static). */
+function copyRulesToPublic() {
+  mkdirSync(publicDir, { recursive: true });
+  for (const name of readdirSync(configDir)) {
+    if (!name.endsWith(".rules.json")) continue;
+    copyFileSync(path.join(configDir, name), path.join(publicDir, name));
+  }
+}
 
 function nexusLabPlugin(): Plugin {
   return {
     name: "nexus-lab-fs",
+    buildStart() {
+      copyRulesToPublic();
+    },
     configureServer(server) {
+      copyRulesToPublic();
       server.middlewares.use(async (req, res, next) => {
         const pathName = req.url?.split("?")[0] ?? "";
         const rulesMatch = pathName.match(/^\/(l[0-9]+\.rules\.json)$/);
         if (rulesMatch && req.method === "GET") {
-          const file = path.join(root, "config", rulesMatch[1]);
+          const file = path.join(configDir, rulesMatch[1]);
           res.setHeader("content-type", "application/json");
           res.end(readFileSync(file, "utf8"));
           return;
@@ -50,6 +65,7 @@ function nexusLabPlugin(): Plugin {
 
 export default defineConfig({
   plugins: [react(), nexusLabPlugin()],
+  publicDir: "public",
   resolve: {
     alias: {
       "@nexus/game-core": path.resolve(__dirname, "../../packages/game-core/src/index.ts"),
@@ -57,4 +73,8 @@ export default defineConfig({
     },
   },
   server: { port: 5173, strictPort: false, host: true },
+  build: {
+    outDir: "dist",
+    emptyOutDir: true,
+  },
 });

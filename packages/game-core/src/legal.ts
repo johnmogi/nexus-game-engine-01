@@ -67,15 +67,18 @@ export function getLegalActions(state: GameState, playerId: string, ctx: EngineC
         acts.push({ type: "MANIP", playerId, element: "air" });
         acts.push({ type: "MANIP", playerId, element: "fire" });
       }
-      if (state.veil.length) {
+      // Water: Veil→LEFT, or (if enableRevival) stand up a downed ally.
+      if (
+        state.veil.length ||
+        (ctx.ruleset.experimental.enableRevival && state.players.some((p) => p.health <= 0))
+      ) {
         acts.push({ type: "MANIP", playerId, element: "water" });
       }
+      // One Earth option — enumerating every reorder flooded auto-policy (~3× Earth).
+      // Resolve picks a random non-identity order (or uses action.order if provided).
       const movable = earthMovableSeats(state, ctx);
       if (movable.length >= 2) {
-        for (const order of permutations(movable)) {
-          if (order.every((s, i) => s === movable[i])) continue;
-          acts.push({ type: "MANIP", playerId, element: "earth", order: order as TableSlot[] });
-        }
+        acts.push({ type: "MANIP", playerId, element: "earth" });
       }
     }
     return acts;
@@ -102,5 +105,14 @@ export function getLegalActions(state: GameState, playerId: string, ctx: EngineC
 }
 
 export function isLegal(state: GameState, action: Action, ctx: EngineCtx): boolean {
-  return getLegalActions(state, action.playerId, ctx).some((a) => JSON.stringify(a) === JSON.stringify(action));
+  const legal = getLegalActions(state, action.playerId, ctx);
+  if (action.type === "MANIP" && action.element === "earth") {
+    if (!legal.some((a) => a.type === "MANIP" && a.element === "earth")) return false;
+    if (!action.order) return true;
+    const movable = earthMovableSeats(state, ctx);
+    if (action.order.length !== movable.length) return false;
+    if (new Set(action.order).size !== action.order.length) return false;
+    return action.order.every((s) => movable.includes(s));
+  }
+  return legal.some((a) => JSON.stringify(a) === JSON.stringify(action));
 }

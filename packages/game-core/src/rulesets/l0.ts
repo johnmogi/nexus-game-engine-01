@@ -58,6 +58,9 @@ const EXPERIMENTAL: ExperimentalRules = {
   eventCombatRounds: 1,
   enableElementalDice: false,
   elementCycle: null,
+  preventDeath: true,
+  enableRevival: false,
+  revivalHealth: 1,
 };
 
 export function l0Ruleset(overrides: Partial<Ruleset> = {}): Ruleset {
