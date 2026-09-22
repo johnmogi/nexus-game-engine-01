@@ -22,8 +22,13 @@ describe("L0 lab rules JSON", () => {
     expect(ruleset.experimental.tableAdvancesPerRound).toBe(3);
     expect(ruleset.experimental.maxTurns).toBe(9);
     expect(ruleset.playableRanks).toEqual([1, 2, 3, 4, 5, 6]);
-    expect(ruleset.experimental.dealMajors).toBe(true);
+    expect(ruleset.experimental.dealMajors).toBe(false);
+    expect(ruleset.experimental.dealCourts).toBe(true);
     expect(ruleset.experimental.altarMajorCap).toBe(2);
+    expect(ruleset.experimental.enableDayDial).toBe(false);
+    expect(ruleset.experimental.enableCharacterEvolution).toBe(false);
+    expect(ruleset.experimental.evolveByColor).toBe(false);
+    expect(ruleset.experimental.autoClaimAceLineage).toBe(false);
     expect(l0Ruleset().experimental.maxTurns).toBe(9);
   });
 
@@ -38,5 +43,14 @@ describe("L0 lab rules JSON", () => {
     expect(ruleset.experimental.rounds).toBe(3);
     expect(ruleset.experimental.tableAdvancesPerRound).toBe(9);
     expect(ruleset.experimental.maxTurns).toBe(27);
+    expect(ruleset.experimental.enableDayDial).toBe(true);
+    expect(ruleset.experimental.dealMajors).toBe(true);
+    expect(ruleset.experimental.dealCourts).toBe(false);
+    expect(ruleset.experimental.eventCombatRounds).toBe(2);
+    expect(ruleset.experimental.enableElementalDice).toBe(false);
+    expect(ruleset.experimental.enableCharacterEvolution).toBe(true);
+    expect(ruleset.experimental.evolveByColor).toBe(true);
+    expect(ruleset.id).toBe("l1");
+    expect(ruleset.experimental.playableLineageIds).toEqual([]);
   });
 });

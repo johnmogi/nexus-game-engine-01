@@ -1,8 +1,8 @@
 import { actorId } from "./actor.js";
 import { defOf } from "./cards.js";
 import { canPlaceOnLineage } from "./lineage.js";
-import { livingPlayers, top } from "./ops.js";
-import type { Action, EngineCtx, GameState } from "./types.js";
+import { earthMovableSeats, livingPlayers, permutations, top } from "./ops.js";
+import type { Action, EngineCtx, GameState, TableSlot } from "./types.js";
 
 function committers(state: GameState, ctx: EngineCtx): string[] {
   if (state.meta.phase !== "RESOLVE_EVENT") return [];
@@ -36,6 +36,7 @@ export function getLegalActions(state: GameState, playerId: string, ctx: EngineC
     if (playerId in state.flags.commits) return [];
     const acts: Action[] = [{ type: "COMMIT", playerId, cardId: "pass" }];
     for (const c of player.hand) {
+      if (c.cardId === "JOKER" || ctx.catalog.get(c.cardId)?.tags.includes("joker")) continue;
       acts.push({ type: "COMMIT", playerId, cardId: c.instanceId });
     }
     return acts;
@@ -43,19 +44,38 @@ export function getLegalActions(state: GameState, playerId: string, ctx: EngineC
 
   if (playerId !== actorId(state)) return [];
 
+  if (
+    ctx.ruleset.experimental.enableCharacterEvolution &&
+    player.eclipse &&
+    !player.aspect &&
+    (state.hold?.characters?.length ?? 0)
+  ) {
+    return state.hold.characters.map((c) => ({
+      type: "CHOOSE_CHARACTER" as const,
+      playerId,
+      cardId: c.cardId,
+    }));
+  }
+
   if (state.meta.phase === "ELEMENTAL_MANIPULATION") {
     const acts: Action[] = [{ type: "SKIP_MANIP", playerId }];
     const enabled = ctx.ruleset.experimental.enableElementalManipulation !== false;
     const free =
       ctx.ruleset.manipulation.paymentMode === "free" || ctx.ruleset.experimental.manipulationFree;
     if (enabled && free && !state.flags.manipUsedThisTurn) {
-      acts.push({ type: "MANIP", playerId, element: "air" });
-      if (state.roundTable.left.length && state.drawDeck.length) {
+      if (state.roundTable.left.length) {
+        acts.push({ type: "MANIP", playerId, element: "air" });
         acts.push({ type: "MANIP", playerId, element: "fire" });
+      }
+      if (state.veil.length) {
         acts.push({ type: "MANIP", playerId, element: "water" });
       }
-      if (state.roundTable.left.length && state.roundTable.middle.length) {
-        acts.push({ type: "MANIP", playerId, element: "earth" });
+      const movable = earthMovableSeats(state, ctx);
+      if (movable.length >= 2) {
+        for (const order of permutations(movable)) {
+          if (order.every((s, i) => s === movable[i])) continue;
+          acts.push({ type: "MANIP", playerId, element: "earth", order: order as TableSlot[] });
+        }
       }
     }
     return acts;
@@ -66,15 +86,11 @@ export function getLegalActions(state: GameState, playerId: string, ctx: EngineC
     const left = top(state.roundTable.left);
     const major = left ? defOf(ctx.catalog, left).arcana === "major" : false;
     if (major) {
-      return [
-        { type: "TAKE_REWARD", playerId, dest: "altar" },
-        { type: "TAKE_REWARD", playerId, dest: "veil" },
-      ];
+      return [{ type: "TAKE_REWARD", playerId, dest: "altar" }];
     }
     const dests: Action[] = [
       { type: "TAKE_REWARD", playerId, dest: "hand" },
       { type: "TAKE_REWARD", playerId, dest: "altar" },
-      { type: "TAKE_REWARD", playerId, dest: "veil" },
     ];
     if (left && canPlaceOnLineage(ctx, player, left)) {
       dests.push({ type: "TAKE_REWARD", playerId, dest: "lineage" });

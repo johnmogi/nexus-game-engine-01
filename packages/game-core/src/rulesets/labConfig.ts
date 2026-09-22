@@ -30,6 +30,7 @@ export interface L0LabDocument {
   eventBarrierMax: number;
   eventDialogueMax: number;
   enableMajors: boolean;
+  enableCourts: boolean;
   majorUsesPD: true;
   altarMinorCap: number;
   altarMajorCap: number;
@@ -38,8 +39,18 @@ export interface L0LabDocument {
   eclipseBonus: number;
   enableLineage: boolean;
   evolutionStep: number;
+  evolveByColor: boolean;
+  dealStartingAce: boolean;
   autoClaimAceLineage: boolean;
   enableVeilRecycle: boolean;
+  enableDayDial: boolean;
+  playableLineageIds: string[];
+  enableCharacterEvolution: boolean;
+  keepRoundTableFilled: boolean;
+  eclipseOnTable: boolean;
+  eclipseOnAltar: boolean;
+  eventCombatRounds: 1 | 2;
+  enableElementalDice: boolean;
   simulation: LabSimulationOptions;
   unimplemented: Record<string, string>;
 }
@@ -68,6 +79,14 @@ function bool(raw: unknown, field: string): boolean {
 function str(raw: unknown, field: string): string {
   if (typeof raw !== "string" || !raw) throw new LabConfigError(`${field} must be a non-empty string`);
   return raw;
+}
+
+function strList(raw: unknown, field: string): string[] {
+  if (!Array.isArray(raw)) throw new LabConfigError(`${field} must be an array of strings`);
+  return raw.map((item, i) => {
+    if (typeof item !== "string" || !item) throw new LabConfigError(`${field}[${i}] must be a non-empty string`);
+    return item;
+  });
 }
 
 export function parseLabDocument(raw: unknown): L0LabDocument {
@@ -100,8 +119,8 @@ export function parseLabDocument(raw: unknown): L0LabDocument {
   if (minMinorRank > maxMinorRank) throw new LabConfigError("minMinorRank must be <= maxMinorRank");
   const eventBarrierMax = num(o.eventBarrierMax, "eventBarrierMax", 0, 6);
   const eventDialogueMax = num(o.eventDialogueMax, "eventDialogueMax", 0, 6);
-  if (eventDialogueMax < eventBarrierMax) {
-    throw new LabConfigError("eventDialogueMax must be >= eventBarrierMax");
+  if (eventBarrierMax < eventDialogueMax) {
+    throw new LabConfigError("eventBarrierMax must be >= eventDialogueMax (1–2 dialogue, then barrier, then treasure)");
   }
 
   return {
@@ -133,6 +152,7 @@ export function parseLabDocument(raw: unknown): L0LabDocument {
     eventBarrierMax,
     eventDialogueMax,
     enableMajors: bool(o.enableMajors, "enableMajors"),
+    enableCourts: o.enableCourts === undefined ? true : bool(o.enableCourts, "enableCourts"),
     majorUsesPD: true,
     altarMinorCap: num(o.altarMinorCap, "altarMinorCap", 0, 20),
     altarMajorCap: num(o.altarMajorCap, "altarMajorCap", 0, 20),
@@ -141,8 +161,30 @@ export function parseLabDocument(raw: unknown): L0LabDocument {
     eclipseBonus: num(o.eclipseBonus, "eclipseBonus", 0, 9),
     enableLineage: bool(o.enableLineage, "enableLineage"),
     evolutionStep: num(o.evolutionStep, "evolutionStep", 1, 9),
+    evolveByColor: o.evolveByColor === undefined ? true : bool(o.evolveByColor, "evolveByColor"),
+    dealStartingAce: o.dealStartingAce === undefined ? true : bool(o.dealStartingAce, "dealStartingAce"),
     autoClaimAceLineage: bool(o.autoClaimAceLineage, "autoClaimAceLineage"),
     enableVeilRecycle: bool(o.enableVeilRecycle, "enableVeilRecycle"),
+    enableDayDial: o.enableDayDial === undefined ? false : bool(o.enableDayDial, "enableDayDial"),
+    playableLineageIds: Array.isArray(o.playableLineageIds)
+      ? strList(o.playableLineageIds, "playableLineageIds")
+      : [],
+    enableCharacterEvolution:
+      o.enableCharacterEvolution === undefined
+        ? false
+        : bool(o.enableCharacterEvolution, "enableCharacterEvolution"),
+    keepRoundTableFilled:
+      o.keepRoundTableFilled === undefined ? true : bool(o.keepRoundTableFilled, "keepRoundTableFilled"),
+    eclipseOnTable: o.eclipseOnTable === undefined ? true : bool(o.eclipseOnTable, "eclipseOnTable"),
+    eclipseOnAltar: o.eclipseOnAltar === undefined ? true : bool(o.eclipseOnAltar, "eclipseOnAltar"),
+    eventCombatRounds: (() => {
+      if (o.eventCombatRounds === undefined) return 1 as const;
+      const n = num(o.eventCombatRounds, "eventCombatRounds", 1, 2);
+      if (n !== 1 && n !== 2) throw new LabConfigError("eventCombatRounds must be 1 or 2");
+      return n as 1 | 2;
+    })(),
+    enableElementalDice:
+      o.enableElementalDice === undefined ? false : bool(o.enableElementalDice, "enableElementalDice"),
     simulation: {
       exportFullTrace: bool(sim.exportFullTrace, "simulation.exportFullTrace"),
       exportWarningTraces: bool(sim.exportWarningTraces, "simulation.exportWarningTraces"),
@@ -160,6 +202,7 @@ export function compileLabDocument(doc: L0LabDocument): {
   const playableRanks: number[] = [];
   for (let r = doc.minMinorRank; r <= doc.maxMinorRank; r++) playableRanks.push(r);
   const ruleset = l0Ruleset({
+    id: doc.version.startsWith("l1") ? "l1" : "l0",
     version: doc.version,
     startingHealth: doc.startingHealth,
     playableRanks,
@@ -175,12 +218,15 @@ export function compileLabDocument(doc: L0LabDocument): {
       startingHandSize: doc.startingHandSize,
       handLimit: doc.handLimit,
       dealMajors: doc.enableMajors,
+      dealCourts: doc.enableCourts,
       barrierDamage: doc.barrierDamage,
       barrierThreshold: doc.barrierThreshold,
       treasureDraw: doc.treasureDraw,
       dialogueThreshold: doc.dialogueThreshold,
       dialogueParticipants: doc.dialogueParticipants,
       evolutionStep: doc.evolutionStep,
+      evolveByColor: doc.evolveByColor,
+      dealStartingAce: doc.dealStartingAce,
       autoClaimAceLineage: doc.autoClaimAceLineage,
       eventBarrierMax: doc.eventBarrierMax,
       eventDialogueMax: doc.eventDialogueMax,
@@ -196,6 +242,15 @@ export function compileLabDocument(doc: L0LabDocument): {
       enableNexus: doc.enableNexus,
       enableLineage: doc.enableLineage,
       enableVeilRecycle: doc.enableVeilRecycle,
+      enableDayDial: doc.enableDayDial,
+      playableLineageIds: doc.playableLineageIds,
+      enableCharacterEvolution: doc.enableCharacterEvolution,
+      keepRoundTableFilled: doc.keepRoundTableFilled,
+      eclipseOnTable: doc.eclipseOnTable,
+      eclipseOnAltar: doc.eclipseOnAltar,
+      eventCombatRounds: doc.eventCombatRounds,
+      enableElementalDice: doc.enableElementalDice,
+      elementCycle: null,
     },
   });
   return { ruleset, playerCount: doc.playerCount, simulation: doc.simulation, document: doc };

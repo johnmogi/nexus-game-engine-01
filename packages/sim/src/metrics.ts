@@ -45,6 +45,7 @@ export interface RunRecord {
   firstLineageTurn: number | null;
   firstEclipseTurn: number | null;
   firstNexusTurn: number | null;
+  characterClaims: number;
   dialogueBowlSum: number;
   dialogueThresholdSum: number;
   dialogueResolves: number;
@@ -74,7 +75,7 @@ export function recordFromState(
   const eventKind = (kind: string) => log.filter((e) => e.type === "EVENT_ROLLED" && e.kind === kind).length;
   const rewardDest = (d: string) => log.filter((e) => e.type === "REWARD_TAKEN" && e.dest === d).length;
   const manipEl = (el: string) => log.filter((e) => e.type === "MANIP_USED" && e.element === el).length;
-  const skipped = count("MANIP_SKIPPED");
+  const skipped = count("MANIP_SKIPPED") + count("MANIP_PASSED");
   const used = count("MANIP_USED");
   const hpStart = ruleset.startingHealth * state.players.length;
   const hpNow = state.players.reduce((a, p) => a + p.health, 0);
@@ -84,7 +85,7 @@ export function recordFromState(
   const dialogue = log.filter((e) => e.type === "DIALOGUE_RESOLVED");
   const barrier = log.filter((e) => e.type === "BARRIER_RESOLVED");
   const ranks = state.players
-    .map((p) => p.lineage.at(-1))
+    .map((p) => p.lineage.filter((c) => ctx.catalog.get(c.cardId)?.arcana === "minor").at(-1))
     .map((c) => (c ? ctx.catalog.get(c.cardId)?.rank : undefined))
     .filter((r): r is number => typeof r === "number");
   const diverted = count("MAJOR_DIVERTED");
@@ -134,6 +135,7 @@ export function recordFromState(
     firstLineageTurn: firstTurn(state, (e) => e.type === "LINEAGE_CLAIMED"),
     firstEclipseTurn: firstTurn(state, (e) => e.type === "ECLIPSE"),
     firstNexusTurn: firstTurn(state, (e) => e.type === "NEXUS_CHECK" && e.nexus),
+    characterClaims: count("CHARACTER_CLAIMED"),
     dialogueBowlSum: dialogue.reduce((a, e) => a + (typeof e.bowl === "number" ? e.bowl : 0), 0),
     dialogueThresholdSum: dialogue.reduce((a, e) => a + (typeof e.threshold === "number" ? e.threshold : 0), 0),
     dialogueResolves: dialogue.length,
@@ -183,6 +185,7 @@ export const RUN_CSV_COLUMNS: (keyof RunRecord)[] = [
   "firstLineageTurn",
   "firstEclipseTurn",
   "firstNexusTurn",
+  "characterClaims",
 ];
 
 export function csvEscape(v: unknown): string {

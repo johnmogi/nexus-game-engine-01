@@ -1,24 +1,33 @@
 import { defOf } from "./cards.js";
+import { dialForTurn } from "./dial.js";
 import {
   activePlayer,
-  dealToHand,
+  airBury,
+  altarHasRedBlackPair,
+  dealStartingAces,
   divertMajor,
+  dealToHand,
   drawOne,
-  earthSwap,
-  eclipseBonus,
+  earthOrder,
+  earthMovableSeats,
+  fillRoundTable,
   firePush,
   giveToHand,
+  grantEclipse,
   hurt,
   livingPlayers,
+  matchingTableRoyals,
   overflowAltar,
+  permutations,
   pushEvent,
   rollDie,
-  shuffleSlots,
+  seedLeftoverAcesToVeil,
   takeTop,
   top,
   waterBring,
 } from "./ops.js";
-import { canPlaceOnLineage } from "./lineage.js";
+import { autoEvolveFromHand, canPlaceOnLineage, nextLineageNeed } from "./lineage.js";
+import { barrierChallenge, barrierOpportunity, commitPower, dialogueChallenge, eventKindFromDie } from "./score.js";
 import { ADVANCES_PER_ROUND } from "./rulesets/l0.js";
 import type {
   Action,
@@ -57,11 +66,7 @@ function goNext(state: GameState, ctx: EngineCtx, from: PhaseId): GameEvent {
 
 function classifyEvent(roll: number, ctx: EngineCtx): EventKind | "none" {
   const exp = ctx.ruleset.experimental;
-  const { eventBarrierMax, eventDialogueMax } = exp;
-  let kind: EventKind;
-  if (roll <= eventBarrierMax) kind = "barrier";
-  else if (roll <= eventDialogueMax) kind = "dialogue";
-  else kind = "treasure";
+  const kind = eventKindFromDie(roll, exp.eventDialogueMax, exp.eventBarrierMax);
   if (kind === "barrier" && exp.enableBarrier === false) return "none";
   if (kind === "dialogue" && exp.enableDialogue === false) return "none";
   if (kind === "treasure" && exp.enableTreasure === false) return "none";
@@ -116,6 +121,11 @@ export function applyAction(state: GameState, action: Action, ctx: EngineCtx): A
 
   if (state.meta.phase === "OVER") return { events, advance: false };
 
+  if (action.type === "CHOOSE_CHARACTER") {
+    events.push(...applyCharacter(state, action));
+    return { events, advance: true };
+  }
+
   if (action.type === "SKIP_MANIP" || action.type === "MANIP") {
     events.push(...applyManip(state, action, ctx));
     events.push(goNext(state, ctx, from));
@@ -131,8 +141,9 @@ export function applyAction(state: GameState, action: Action, ctx: EngineCtx): A
   if (action.type === "COMMIT") {
     events.push(...applyCommit(state, action, ctx));
     if (commitsComplete(state, ctx)) {
-      events.push(...finishEvent(state, ctx));
-      if (state.meta.outcome === "playing") events.push(goNext(state, ctx, from));
+      const done = resolveOrContinueCombat(state, ctx);
+      events.push(...done.events);
+      if (done.finished && state.meta.outcome === "playing") events.push(goNext(state, ctx, from));
     }
     return { events, advance: true };
   }
@@ -146,6 +157,29 @@ export function applyAction(state: GameState, action: Action, ctx: EngineCtx): A
     events.push(goNext(state, ctx, from));
   }
   return { events, advance: true };
+}
+
+function applyCharacter(
+  state: GameState,
+  action: Extract<Action, { type: "CHOOSE_CHARACTER" }>,
+): GameEvent[] {
+  const p = activePlayer(state);
+  if (!state.hold) state.hold = { nexus: [], characters: [] };
+  const i = state.hold.characters.findIndex((c) => c.cardId === action.cardId);
+  const card = i >= 0 ? state.hold.characters.splice(i, 1)[0] : undefined;
+  if (!card || p.aspect) {
+    return [pushEvent(state, { type: "CHARACTER_REJECTED", playerId: p.id, cardId: action.cardId })];
+  }
+  p.aspect = card.cardId;
+  p.lineage.push(card);
+  return [
+    pushEvent(state, {
+      type: "CHARACTER_CLAIMED",
+      playerId: p.id,
+      cardId: card.cardId,
+      impact: "pending",
+    }),
+  ];
 }
 
 function applyAdvancePhase(state: GameState, ctx: EngineCtx): GameEvent[] {
@@ -166,8 +200,10 @@ function applyAdvancePhase(state: GameState, ctx: EngineCtx): GameEvent[] {
       return rollEvent(state, ctx);
     case "RESOLVE_EVENT":
       return enterResolve(state, ctx);
-    case "LINEAGE_EVOLUTION":
-      return evolve(state, ctx);
+    case "LINEAGE_EVOLUTION": {
+      const filled = fillRoundTable(state, ctx);
+      return [...filled, ...evolve(state, ctx)];
+    }
     case "ECLIPSE_NEXUS_CHECK":
       return eclipseCheck(state, ctx);
     case "TURN_END":
@@ -183,9 +219,37 @@ function setup(state: GameState, ctx: EngineCtx): GameEvent[] {
   const n = ctx.ruleset.experimental.startingHandSize;
   state.meta.turn = 1;
   state.meta.round = 1;
+  events.push(...dealStartingAces(state, ctx));
+  events.push(...seedLeftoverAcesToVeil(state, ctx));
   for (const p of state.players) {
-    const got = dealToHand(state, p.id, n, limit, ctx);
-    events.push(pushEvent(state, { type: "DEAL_HAND", playerId: p.id, count: got.length }));
+    const dealt = dealToHand(state, p.id, n, limit, ctx);
+    events.push(pushEvent(state, { type: "DEAL_HAND", playerId: p.id, count: dealt.length }));
+  }
+  for (const p of state.players) {
+    const grown = autoEvolveFromHand(ctx, p);
+    if (grown.length) {
+      for (const card of grown) {
+        events.push(
+          pushEvent(state, {
+            type: "LINEAGE_EVOLVED",
+            playerId: p.id,
+            cardId: card.cardId,
+            turn: 0,
+            source: "deal",
+          }),
+        );
+      }
+    } else {
+      const need = nextLineageNeed(ctx, p);
+      events.push(
+        pushEvent(state, {
+          type: "LINEAGE_NONE",
+          playerId: p.id,
+          source: "deal",
+          neededRank: need?.rank ?? null,
+        }),
+      );
+    }
   }
   events.push(pushEvent(state, { type: "ROUND_BEGAN", round: 1, of: ctx.ruleset.experimental.rounds }));
   return events;
@@ -196,16 +260,26 @@ function turnStart(state: GameState, ctx: EngineCtx): GameEvent[] {
   state.flags.lastEvent = null;
   state.flags.lastEventRoll = null;
   state.flags.commits = {};
+  state.flags.combatRound = 0;
+  state.flags.combatBowl = 0;
   const over = finishIfNeeded(state, ctx);
   if (over) return [over];
   if (activePlayer(state).health <= 0) rotateLeader(state);
-  return [
+  const events: GameEvent[] = [
     pushEvent(state, {
       type: "TURN_BEGAN",
       playerId: state.meta.activePlayerId,
       turn: state.meta.turn,
     }),
   ];
+  if (ctx.ruleset.experimental.enableDayDial) {
+    const dial = dialForTurn(state.meta.turn, state.meta.playerCount, state.meta.round);
+    state.meta.dial = dial;
+    events.push(pushEvent(state, { type: "DIAL_SET", dial, turn: state.meta.turn, round: state.meta.round }));
+  } else {
+    state.meta.dial = "none";
+  }
+  return events;
 }
 
 function pdResurface(state: GameState, ctx: EngineCtx): GameEvent[] {
@@ -214,8 +288,14 @@ function pdResurface(state: GameState, ctx: EngineCtx): GameEvent[] {
   if ((card.arrivedTurn ?? state.meta.turn) >= state.meta.turn) return [];
   takeTop(state.roundTable.pd);
   state.altar.major.push(card);
-  overflowAltar(state, "major", ctx.ruleset.experimental.altarMajorCap);
-  return [pushEvent(state, { type: "PD_RESURFACED", cardId: card.cardId, dest: "altar.major" })];
+  const spilled = overflowAltar(state, "major", ctx.ruleset.experimental.altarMajorCap);
+  const events: GameEvent[] = [
+    pushEvent(state, { type: "PD_RESURFACED", cardId: card.cardId, dest: "altar.major" }),
+  ];
+  for (const c of spilled) {
+    events.push(pushEvent(state, { type: "ALTAR_OVERFLOW", pile: "major", cardId: c.cardId, dest: "veil" }));
+  }
+  return events;
 }
 
 function advanceTable(state: GameState, ctx: EngineCtx): GameEvent[] {
@@ -254,6 +334,7 @@ function advanceTable(state: GameState, ctx: EngineCtx): GameEvent[] {
       events.push(pushEvent(state, { type: "GAME_OVER", outcome: "deck_exhausted" }));
     }
   }
+  events.push(...fillRoundTable(state, ctx));
   return events;
 }
 
@@ -281,18 +362,27 @@ function applyManip(state: GameState, action: Action, ctx: EngineCtx): GameEvent
   if (!allowed) return [pushEvent(state, { type: "MANIP_SKIPPED", reason: "payment_unspecified" })];
   if (action.type === "SKIP_MANIP") {
     state.flags.manipUsedThisTurn = true;
-    return [pushEvent(state, { type: "MANIP_SKIPPED", reason: "player" })];
+    return [pushEvent(state, { type: "MANIP_PASSED", reason: "player" })];
   }
   if (action.type !== "MANIP") return [];
   let ok = false;
-  if (action.element === "air") {
-    shuffleSlots(state);
-    ok = true;
-  } else if (action.element === "fire") ok = firePush(state, ctx);
+  if (action.element === "air") ok = airBury(state);
+  else if (action.element === "fire") ok = firePush(state, ctx);
   else if (action.element === "water") ok = waterBring(state);
-  else if (action.element === "earth") ok = earthSwap(state);
+  else if (action.element === "earth") {
+    ok = Boolean(action.order && earthOrder(state, ctx, action.order));
+  }
   state.flags.manipUsedThisTurn = true;
-  return [pushEvent(state, { type: "MANIP_USED", element: action.element, ok })];
+  const events: GameEvent[] = [
+    pushEvent(state, {
+      type: "MANIP_USED",
+      element: action.element,
+      ok,
+      order: action.element === "earth" ? action.order : undefined,
+    }),
+  ];
+  if (ok) events.push(...fillRoundTable(state, ctx));
+  return events;
 }
 
 function rollEvent(state: GameState, ctx: EngineCtx): GameEvent[] {
@@ -307,9 +397,64 @@ function rollEvent(state: GameState, ctx: EngineCtx): GameEvent[] {
 function enterResolve(state: GameState, ctx: EngineCtx): GameEvent[] {
   if (state.flags.lastEvent === "treasure") return resolveTreasure(state, ctx);
   if (state.flags.lastEvent === "barrier" || state.flags.lastEvent === "dialogue") {
-    return [pushEvent(state, { type: "EVENT_WAITING_COMMITS", kind: state.flags.lastEvent })];
+    state.flags.combatRound = 1;
+    state.flags.combatBowl = 0;
+    state.flags.commits = {};
+    return [
+      pushEvent(state, {
+        type: "EVENT_WAITING_COMMITS",
+        kind: state.flags.lastEvent,
+        round: 1,
+        of: ctx.ruleset.experimental.eventCombatRounds ?? 1,
+      }),
+    ];
   }
   return [pushEvent(state, { type: "EVENT_NONE" })];
+}
+
+function roundCommitPower(state: GameState, ctx: EngineCtx): number {
+  let bowl = 0;
+  for (const id of committers(state, ctx)) {
+    bowl += commitPower(state, ctx, id, state.flags.commits[id] ?? "pass");
+  }
+  return bowl;
+}
+
+/** After all seats commit: accumulate, maybe start another round, else finish. */
+function resolveOrContinueCombat(state: GameState, ctx: EngineCtx): { events: GameEvent[]; finished: boolean } {
+  const maxRounds = ctx.ruleset.experimental.eventCombatRounds ?? 1;
+  // COMMIT may land before ADVANCE runs enterResolve; treat 0 as round 1.
+  const round = state.flags.combatRound || 1;
+  state.flags.combatRound = round;
+  const roundPower = roundCommitPower(state, ctx);
+  state.flags.combatBowl += roundPower;
+  const events: GameEvent[] = [
+    pushEvent(state, {
+      type: "COMBAT_ROUND",
+      kind: state.flags.lastEvent,
+      round,
+      of: maxRounds,
+      roundPower,
+      bowl: state.flags.combatBowl,
+    }),
+  ];
+  if (round < maxRounds) {
+    state.flags.combatRound = round + 1;
+    state.flags.commits = {};
+    events.push(
+      pushEvent(state, {
+        type: "EVENT_WAITING_COMMITS",
+        kind: state.flags.lastEvent,
+        round: state.flags.combatRound,
+        of: maxRounds,
+      }),
+    );
+    return { events, finished: false };
+  }
+  events.push(...finishEvent(state, ctx));
+  state.flags.combatRound = 0;
+  state.flags.combatBowl = 0;
+  return { events, finished: true };
 }
 
 function applyCommit(state: GameState, action: Extract<Action, { type: "COMMIT" }>, ctx: EngineCtx): GameEvent[] {
@@ -327,30 +472,52 @@ function applyCommit(state: GameState, action: Extract<Action, { type: "COMMIT" 
         playerId: action.playerId,
         cardId: card?.cardId ?? null,
         hidden: true,
+        round: state.flags.combatRound || 1,
       }),
     ];
   }
   state.flags.commits[action.playerId] = "pass";
-  return [pushEvent(state, { type: "COMMITTED", playerId: action.playerId, cardId: null, hidden: true })];
-}
-
-function rankOf(ctx: EngineCtx, cardId: string | "pass"): number {
-  if (cardId === "pass") return 0;
-  return ctx.catalog.get(cardId)?.rank ?? 0;
+  return [
+    pushEvent(state, {
+      type: "COMMITTED",
+      playerId: action.playerId,
+      cardId: null,
+      hidden: true,
+      round: state.flags.combatRound || 1,
+    }),
+  ];
 }
 
 function finishEvent(state: GameState, ctx: EngineCtx): GameEvent[] {
   const exp = ctx.ruleset.experimental;
   const events: GameEvent[] = [];
+  const maxRounds = exp.eventCombatRounds ?? 1;
   if (state.flags.lastEvent === "barrier") {
     const pid = state.meta.activePlayerId;
-    const raw = rankOf(ctx, state.flags.commits[pid] ?? "pass");
-    const total = eclipseBonus(state, pid, raw);
-    const success = total >= exp.barrierThreshold;
-    events.push(pushEvent(state, { type: "BARRIER_RESOLVED", success, total, threshold: exp.barrierThreshold }));
+    const challenge = barrierChallenge(state, ctx);
+    const total = state.flags.combatBowl + barrierOpportunity();
+    let success = challenge <= 0 || total >= challenge;
+    if (maxRounds > 1 && total === challenge) success = false;
+    events.push(
+      pushEvent(state, {
+        type: "BARRIER_RESOLVED",
+        success,
+        total,
+        threshold: challenge,
+        stalemate: maxRounds > 1 && total === challenge,
+      }),
+    );
     if (!success) {
       const dmg = hurt(state, pid, exp.barrierDamage);
       events.push(pushEvent(state, { type: "BARRIER_FAIL", playerId: pid, damage: dmg }));
+      const obstacle = takeTop(state.roundTable.left);
+      if (obstacle) {
+        if (isMajor(ctx, obstacle)) state.altar.major.push(obstacle);
+        else state.altar.minors.push(obstacle);
+        overflowAltar(state, "minors", exp.altarMinorCap);
+        overflowAltar(state, "major", exp.altarMajorCap);
+        events.push(pushEvent(state, { type: "BARRIER_TO_ALTAR", cardId: obstacle.cardId }));
+      }
       if (activePlayer(state).health <= 0) rotateLeader(state);
       const over = finishIfNeeded(state, ctx);
       if (over) events.push(over);
@@ -359,72 +526,132 @@ function finishEvent(state: GameState, ctx: EngineCtx): GameEvent[] {
     }
   } else if (state.flags.lastEvent === "dialogue") {
     const ids = committers(state, ctx);
-    let bowl = 0;
-    for (const id of ids) {
-      bowl += eclipseBonus(state, id, rankOf(ctx, state.flags.commits[id] ?? "pass"));
-    }
-    const success = bowl >= exp.dialogueThreshold;
-    events.push(pushEvent(state, { type: "DIALOGUE_RESOLVED", success, bowl, threshold: exp.dialogueThreshold, participants: ids }));
+    const bowl = state.flags.combatBowl;
+    const challenge = dialogueChallenge(state, ctx);
+    let success = challenge <= 0 || bowl >= challenge;
+    if (maxRounds > 1 && bowl === challenge) success = false;
+    events.push(
+      pushEvent(state, {
+        type: "DIALOGUE_RESOLVED",
+        success,
+        bowl,
+        threshold: challenge,
+        participants: ids,
+        stalemate: maxRounds > 1 && bowl === challenge,
+      }),
+    );
+    const seats: Array<"left" | "middle"> = ["left", "middle"];
     if (success) {
-      const seats: Array<"left" | "middle" | "pd"> = ["left", "middle", "pd"];
-      ids.forEach((id, i) => {
+      const active = state.meta.activePlayerId;
+      const ordered = [active, ...ids.filter((id) => id !== active)];
+      ordered.forEach((id, i) => {
         const slot = seats[i];
         if (!slot) return;
         const card = takeTop(state.roundTable[slot]);
         if (!card) return;
+        if (isMajor(ctx, card)) {
+          divertMajor(state, ctx, card, "dialogue_reward");
+          events.push(pushEvent(state, { type: "DIALOGUE_REWARD", playerId: id, cardId: card.cardId, slot, dest: "diverted" }));
+          return;
+        }
         giveToHand(state, id, card, exp.handLimit, ctx);
         events.push(pushEvent(state, { type: "DIALOGUE_REWARD", playerId: id, cardId: card.cardId, slot }));
+        const taker = state.players.find((x) => x.id === id);
+        if (taker) {
+          for (const grown of autoEvolveFromHand(ctx, taker)) {
+            events.push(
+              pushEvent(state, {
+                type: "LINEAGE_EVOLVED",
+                playerId: id,
+                cardId: grown.cardId,
+                turn: state.meta.turn,
+                source: "dialogue",
+              }),
+            );
+          }
+        }
       });
+    } else {
+      for (const slot of seats) {
+        const card = takeTop(state.roundTable[slot]);
+        if (!card) continue;
+        state.veil.push(card);
+        events.push(pushEvent(state, { type: "DIALOGUE_TO_VEIL", cardId: card.cardId, slot }));
+      }
     }
   }
   return events;
 }
 
-function resolveTreasure(state: GameState, ctx: EngineCtx): GameEvent[] {
-  const p = activePlayer(state);
-  const got = dealToHand(
-    state,
-    p.id,
-    ctx.ruleset.experimental.treasureDraw,
-    ctx.ruleset.experimental.handLimit,
-    ctx,
-  );
-  return [pushEvent(state, { type: "TREASURE", playerId: p.id, count: got.length })];
+function resolveTreasure(state: GameState, _ctx: EngineCtx): GameEvent[] {
+  const left = top(state.roundTable.left);
+  return [
+    pushEvent(state, {
+      type: "TREASURE",
+      playerId: activePlayer(state).id,
+      cardId: left?.cardId ?? null,
+      dest: "left",
+    }),
+  ];
 }
 
 function applyReward(state: GameState, action: Extract<Action, { type: "TAKE_REWARD" }>, ctx: EngineCtx): GameEvent[] {
   const card = takeTop(state.roundTable.left);
-  if (!card) return [pushEvent(state, { type: "REWARD_EMPTY" })];
+  if (!card) {
+    return [...fillRoundTable(state, ctx), pushEvent(state, { type: "REWARD_EMPTY" })];
+  }
   const p = activePlayer(state);
   const limit = ctx.ruleset.experimental.handLimit;
+  const events: GameEvent[] = [];
   if (isMajor(ctx, card) && (action.dest === "hand" || action.dest === "lineage")) {
     divertMajor(state, ctx, card, `reward_${action.dest}`);
-    return [pushEvent(state, { type: "REWARD_TAKEN", cardId: card.cardId, dest: "diverted" })];
-  }
-  if (action.dest === "hand") giveToHand(state, p.id, card, limit, ctx);
-  else if (action.dest === "altar") {
+    events.push(pushEvent(state, { type: "REWARD_TAKEN", cardId: card.cardId, dest: "diverted" }));
+  } else if (action.dest === "hand") {
+    giveToHand(state, p.id, card, limit, ctx);
+    events.push(pushEvent(state, { type: "REWARD_TAKEN", cardId: card.cardId, dest: action.dest }));
+  } else if (action.dest === "altar") {
     const def = defOf(ctx.catalog, card);
     if (def.arcana === "major") state.altar.major.push(card);
     else state.altar.minors.push(card);
     overflowAltar(state, "minors", ctx.ruleset.experimental.altarMinorCap);
     overflowAltar(state, "major", ctx.ruleset.experimental.altarMajorCap);
+    events.push(pushEvent(state, { type: "REWARD_TAKEN", cardId: card.cardId, dest: action.dest }));
   } else if (action.dest === "lineage") {
     if (!canPlaceOnLineage(ctx, p, card)) {
-      state.veil.push(card);
-      return [
+      state.altar.minors.push(card);
+      overflowAltar(state, "minors", ctx.ruleset.experimental.altarMinorCap);
+      events.push(
         pushEvent(state, {
           type: "REWARD_TAKEN",
           cardId: card.cardId,
-          dest: "veil",
+          dest: "altar",
           reason: "lineage_illegal",
         }),
-      ];
+      );
+    } else {
+      p.lineage.push(card);
+      events.push(pushEvent(state, { type: "REWARD_TAKEN", cardId: card.cardId, dest: action.dest }));
     }
-    p.lineage.push(card);
   } else {
-    state.veil.push(card);
+    giveToHand(state, p.id, card, limit, ctx);
+    events.push(pushEvent(state, { type: "REWARD_TAKEN", cardId: card.cardId, dest: "hand", reason: "fallback" }));
   }
-  return [pushEvent(state, { type: "REWARD_TAKEN", cardId: card.cardId, dest: action.dest })];
+  const grower = state.players.find((x) => x.id === p.id);
+  if (grower && (action.dest === "hand" || action.dest === "lineage")) {
+    for (const grown of autoEvolveFromHand(ctx, grower)) {
+      events.push(
+        pushEvent(state, {
+          type: "LINEAGE_EVOLVED",
+          playerId: p.id,
+          cardId: grown.cardId,
+          turn: state.meta.turn,
+          source: "reward",
+        }),
+      );
+    }
+  }
+  events.push(...fillRoundTable(state, ctx));
+  return events;
 }
 
 function evolve(state: GameState, ctx: EngineCtx): GameEvent[] {
@@ -433,7 +660,6 @@ function evolve(state: GameState, ctx: EngineCtx): GameEvent[] {
   }
   const events: GameEvent[] = [];
   const p = activePlayer(state);
-  const step = ctx.ruleset.experimental.evolutionStep;
   const current = p.lineage.at(-1);
   if (!current && ctx.ruleset.experimental.autoClaimAceLineage) {
     const i = p.hand.findIndex((c) => defOf(ctx.catalog, c).rank === 1);
@@ -445,44 +671,64 @@ function evolve(state: GameState, ctx: EngineCtx): GameEvent[] {
       }
     }
   }
-  const cur = p.lineage.at(-1);
-  if (cur) {
-    const curDef = defOf(ctx.catalog, cur);
-    const i = p.hand.findIndex((c) => {
-      const d = defOf(ctx.catalog, c);
-      return d.rank === curDef.rank + step && d.lineageId === curDef.lineageId;
-    });
-    if (i >= 0) {
-      const next = p.hand.splice(i, 1)[0];
-      if (next) {
-        p.lineage.push(next);
-        events.push(pushEvent(state, { type: "LINEAGE_EVOLVED", playerId: p.id, cardId: next.cardId, turn: state.meta.turn }));
-      }
-    }
+  for (const card of autoEvolveFromHand(ctx, p)) {
+    events.push(
+      pushEvent(state, {
+        type: "LINEAGE_EVOLVED",
+        playerId: p.id,
+        cardId: card.cardId,
+        turn: state.meta.turn,
+      }),
+    );
   }
-  if (!events.length) events.push(pushEvent(state, { type: "LINEAGE_NONE" }));
+  if (!events.length) {
+    const need = nextLineageNeed(ctx, p);
+    events.push(
+      pushEvent(state, {
+        type: "LINEAGE_NONE",
+        playerId: p.id,
+        neededRank: need?.rank ?? null,
+      }),
+    );
+  }
   return events;
 }
 
 function eclipseCheck(state: GameState, ctx: EngineCtx): GameEvent[] {
   const p = activePlayer(state);
-  if (ctx.ruleset.experimental.enableEclipse === false) {
+  const exp = ctx.ruleset.experimental;
+  if (exp.enableEclipse === false) {
     return [pushEvent(state, { type: "ECLIPSE_CHECK", playerId: p.id, skipped: true, ready: false })];
   }
-  const majors = state.altar.major.filter((c) => defOf(ctx.catalog, c).arcana === "major");
-  if (!p.eclipse && majors.length >= 2) {
-    p.eclipse = true;
-    p.joker.active = true;
-    return [
+  const altarMajors = state.altar.major.filter((c) => defOf(ctx.catalog, c).arcana === "major");
+  const tablePair = exp.eclipseOnTable !== false ? matchingTableRoyals(state, ctx) : null;
+  const altarReady =
+    exp.eclipseOnAltar !== false && altarHasRedBlackPair(ctx, altarMajors);
+  const source = tablePair ? "table" : altarReady ? "altar" : null;
+  if (!p.eclipse && source) {
+    const events: GameEvent[] = [
       pushEvent(state, {
         type: "ECLIPSE",
         playerId: p.id,
-        bonus: ctx.ruleset.experimental.eclipseBonus,
+        bonus: exp.eclipseBonus,
         turn: state.meta.turn,
+        source,
+        pair: tablePair,
       }),
     ];
+    events.push(...grantEclipse(state, p.id, ctx));
+    return events;
   }
-  return [pushEvent(state, { type: "ECLIPSE_CHECK", playerId: p.id, ready: majors.length >= 2 })];
+  return [
+    pushEvent(state, {
+      type: "ECLIPSE_CHECK",
+      playerId: p.id,
+      ready: Boolean(source),
+      altarMajors: altarMajors.length,
+      altarRedBlack: altarHasRedBlackPair(ctx, altarMajors),
+      tablePair,
+    }),
+  ];
 }
 
 function turnEnd(state: GameState, ctx: EngineCtx): GameEvent[] {

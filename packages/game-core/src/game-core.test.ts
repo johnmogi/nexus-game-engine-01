@@ -57,11 +57,18 @@ describe("createGame", () => {
   it("deals Ace–6 minors plus optional majors; keeps 7–9 in catalog only", () => {
     const { state, catalog, ruleset } = setup(2);
     expect(catalog.all().some((c) => c.rank >= 7)).toBe(true);
-    const minors = catalog.all().filter((c) => c.arcana === "minor" && ruleset.playableRanks.includes(c.rank));
-    const majors = catalog.all().filter((c) => c.arcana === "major");
-    expect(state.drawDeck).toHaveLength(minors.length + majors.length);
-    expect(state.drawDeck).toHaveLength(50);
-    expect(instanceCount(state)).toBe(50);
+    const lines = new Set(ruleset.experimental.playableLineageIds);
+    const minors = catalog.all().filter((c) => {
+      if (c.arcana !== "minor" || !ruleset.playableRanks.includes(c.rank)) return false;
+      if (lines.size && c.lineageId && !lines.has(c.lineageId)) return false;
+      return true;
+    });
+    expect(minors).toHaveLength(24);
+    expect(state.drawDeck).toHaveLength(36);
+    expect(instanceCount(state)).toBe(42);
+    expect(state.hold.nexus).toHaveLength(2);
+    expect(state.hold.characters).toHaveLength(4);
+    expect(state.drawDeck.every((c) => !c.cardId.startsWith("MOON-") || c.cardId.includes("MAJ"))).toBe(true);
   });
 
   it("keeps every instance in exactly one zone", () => {
@@ -85,13 +92,25 @@ describe("adventure loop", () => {
   });
 
   it("SETUP deals hands and seeds the round table", () => {
-    const { state, ctx } = setup(2);
+    const { state, ctx, catalog } = setup(2);
     const next = step(state, ctx);
-    expect(next.players.every((p) => p.hand.length === 3)).toBe(true);
+    expect(next.players.every((p) => p.lineage.length >= 1)).toBe(true);
+    expect(next.players.every((p) => p.hand.length + Math.max(0, p.lineage.length - 1) === 3)).toBe(true);
+    expect(
+      next.players.every((p) => {
+        const def = catalog.get(p.lineage[0]!.cardId);
+        return def?.arcana === "minor" && def.rank === 1;
+      }),
+    ).toBe(true);
+    const lines = new Set(next.players.map((p) => catalog.get(p.lineage[0]!.cardId)?.lineageId));
+    expect(lines.size).toBe(next.players.length);
     expect(next.roundTable.left).toHaveLength(0);
     expect(next.roundTable.middle).toHaveLength(0);
     expect(next.roundTable.pd).toHaveLength(0);
-    expect(instanceCount(next)).toBe(50);
+    expect(next.veil.every((c) => catalog.get(c.cardId)?.rank === 1)).toBe(true);
+    expect(next.veil.length).toBe(2);
+    expect(next.altar.major).toHaveLength(0);
+    expect(instanceCount(next)).toBe(42);
     expect(next.meta.phase).toBe("TURN_START");
   });
 
@@ -100,7 +119,8 @@ describe("adventure loop", () => {
     const end = playOut(state, ctx);
     expect(end.meta.phase).toBe("OVER");
     expect(["turn_limit", "party_down", "deck_exhausted"]).toContain(end.meta.outcome);
-    expect(instanceCount(end)).toBe(50);
+    const jokers = end.players.reduce((n, p) => n + p.hand.filter((c) => c.cardId === "JOKER").length, 0);
+    expect(instanceCount(end) - jokers).toBe(42);
     expect(end.log.some((e) => e.type === "EVENT_ROLLED")).toBe(true);
     expect(end.log.some((e) => e.type === "PHASE_CHANGED")).toBe(true);
   });
@@ -117,8 +137,14 @@ describe("views and serialize", () => {
     const { state, ctx } = setup(2);
     const dealt = step(state, ctx);
     const p2 = projectView(dealt, { mode: "player", viewerId: "P2" });
-    expect(p2.players[0]?.hand.every((c) => c.cardId === "?")).toBe(true);
+    expect(p2.players[0]?.hand.every((c) => c.cardId.startsWith("?"))).toBe(true);
     expect(p2.players[1]?.hand[0]?.cardId).not.toBe("?");
+    expect(p2.roundTable.left.every((c) => c.cardId.startsWith("?"))).toBe(true);
+    expect(p2.drawDeck.every((c) => c.cardId.startsWith("?"))).toBe(true);
+    expect(p2.drawDeck.some((c) => c.cardId === "?-major")).toBe(true);
+    expect(p2.drawDeck.some((c) => c.cardId === "?-minor")).toBe(true);
+    const god = projectView(dealt, { mode: "admin" });
+    expect(god.drawDeck.some((c) => c.cardId.startsWith("?"))).toBe(false);
   });
 
   it("round-trips JSON", () => {

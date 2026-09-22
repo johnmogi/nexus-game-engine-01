@@ -56,5 +56,5 @@ export default defineConfig({
       "@nexus/sim": path.resolve(__dirname, "../../packages/sim/src/index.ts"),
     },
   },
-  server: { port: 5173, strictPort: true },
+  server: { port: 5173, strictPort: false, host: true },
 });

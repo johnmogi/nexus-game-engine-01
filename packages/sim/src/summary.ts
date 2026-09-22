@@ -94,7 +94,7 @@ export function buildSummary(rows: RunRecord[]): Record<string, unknown> {
         earth: rows.reduce((a, r) => a + r.elementalEarth, 0),
       },
       averageUsesPerGame: n ? used / n : null,
-      denominator: "MANIP_USED + MANIP_SKIPPED",
+      denominator: "MANIP_USED + MANIP_PASSED/SKIPPED",
     },
     lineage: {
       gamesWithClaimPct: pct(rows.filter((r) => r.lineageClaims > 0).length, n),
@@ -112,7 +112,10 @@ export function buildSummary(rows: RunRecord[]): Record<string, unknown> {
     eclipseNexus: {
       gamesWithEclipsePct: pct(rows.filter((r) => r.eclipseCount > 0).length, n),
       averageEclipseCount: n ? rows.reduce((a, r) => a + r.eclipseCount, 0) / n : null,
+      note: "Each player Eclipses at most once. averageEclipseCount ≈ playerCount means every seat Eclipsed.",
       gamesWithNexusPct: pct(rows.filter((r) => r.nexusCount > 0).length, n),
+      gamesWithCharacterPct: pct(rows.filter((r) => r.characterClaims > 0).length, n),
+      averageCharacterClaims: n ? rows.reduce((a, r) => a + r.characterClaims, 0) / n : null,
       averageFirstEclipseTurn: avgWhen(rows, (r) => r.firstEclipseTurn),
       averageFirstNexusTurn: avgWhen(rows, (r) => r.firstNexusTurn),
     },

@@ -19,9 +19,10 @@
   "dialogueThreshold": 6,
   "dialogueParticipants": "all_living",
   "treasureDraw": 1,
-  "eventBarrierMax": 2,
-  "eventDialogueMax": 4,
+  "eventBarrierMax": 4,
+  "eventDialogueMax": 2,
   "enableMajors": true,
+  "enableCourts": false,
   "majorUsesPD": true,
   "altarMinorCap": 3,
   "altarMajorCap": 2,
@@ -30,8 +31,18 @@
   "eclipseBonus": 1,
   "enableLineage": true,
   "evolutionStep": 2,
-  "autoClaimAceLineage": true,
+  "evolveByColor": true,
+  "dealStartingAce": true,
+  "autoClaimAceLineage": false,
   "enableVeilRecycle": true,
+  "enableDayDial": true,
+  "playableLineageIds": [],
+  "enableCharacterEvolution": true,
+  "keepRoundTableFilled": true,
+  "eclipseOnTable": true,
+  "eclipseOnAltar": true,
+  "eventCombatRounds": 2,
+  "enableElementalDice": false,
   "simulation": {
     "exportFullTrace": false,
     "exportWarningTraces": true
@@ -39,7 +50,8 @@
   "unimplemented": {
     "enableHealing": "No heal verb yet.",
     "enableResurrection": "No revival verb yet.",
-    "twentyTwoMajors": "Catalog is still the 2-Major proxy. Real 22 + 4 characters wait on the game DB.",
+    "aceSelect": "Players do not pick an Ace. SETUP deals one random Ace into lineage. A later character screen should not be a 4-option Ace menu.",
+    "twentyTwoMajors": "20 Majors: Nexus 0 in hold, characters #1+#3 after Eclipse, table ranks 2 and 4–9. Impacts pending.",
     "ranks7to9": "Same Ace–6 deal as L0. 7–9 remain catalog-only.",
     "dialogueGeometry3to4p": "Still living seats vs 3 table slots."
   }

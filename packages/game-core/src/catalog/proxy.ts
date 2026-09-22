@@ -1,4 +1,8 @@
 import type { CardCatalog, CardDef, DeckId, Element } from "../types.js";
+import { courtDefs } from "./courts.js";
+import { jokerDef } from "./joker.js";
+import { majorDefs } from "./majors.js";
+import { MINOR_NAMES } from "./minorNames.js";
 
 const RANKS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 
@@ -9,7 +13,7 @@ const LINEAGES: { lineageId: string; element: Element; sun: string; moon: string
   { lineageId: "crystals", element: "earth", sun: "crystals", moon: "earth" },
 ];
 
-function pairId(deck: DeckId, lineage: string, rank: number, element: Element): string {
+function pairId(deck: DeckId, lineage: string, rank: number): string {
   if (deck === "sunlight") {
     const moonName = LINEAGES.find((l) => l.sun === lineage)?.moon ?? lineage;
     return `MOON-${moonName.toUpperCase()}-${rank}`;
@@ -22,24 +26,28 @@ function minors(): CardDef[] {
   const cards: CardDef[] = [];
   for (const row of LINEAGES) {
     for (const rank of RANKS) {
+      const sunId = `SUN-${row.sun.toUpperCase()}-${rank}`;
+      const moonId = `MOON-${row.moon.toUpperCase()}-${rank}`;
       cards.push({
-        id: `SUN-${row.sun.toUpperCase()}-${rank}`,
+        id: sunId,
         rank,
         arcana: "minor",
         element: row.element,
         lineageId: row.sun,
         deck: "sunlight",
-        pairId: pairId("sunlight", row.sun, rank, row.element),
+        pairId: pairId("sunlight", row.sun, rank),
+        ...(MINOR_NAMES[sunId] !== undefined ? { name: MINOR_NAMES[sunId] } : {}),
         tags: ["proxy", row.sun],
       });
       cards.push({
-        id: `MOON-${row.moon.toUpperCase()}-${rank}`,
+        id: moonId,
         rank,
         arcana: "minor",
         element: row.element,
         lineageId: row.moon,
         deck: "moonlight",
-        pairId: pairId("moonlight", row.moon, rank, row.element),
+        pairId: pairId("moonlight", row.moon, rank),
+        ...(MINOR_NAMES[moonId] !== undefined ? { name: MINOR_NAMES[moonId] } : {}),
         tags: ["proxy", row.moon],
       });
     }
@@ -47,36 +55,13 @@ function minors(): CardDef[] {
   return cards;
 }
 
-function majors(): CardDef[] {
-  return [
-    {
-      id: "SUN-MAJ-00",
-      rank: 0,
-      arcana: "major",
-      lineageId: "sun",
-      deck: "sunlight",
-      pairId: "MOON-MAJ-00",
-      tags: ["proxy", "major"],
-    },
-    {
-      id: "MOON-MAJ-00",
-      rank: 0,
-      arcana: "major",
-      lineageId: "moon",
-      deck: "moonlight",
-      pairId: "SUN-MAJ-00",
-      tags: ["proxy", "major"],
-    },
-  ];
-}
-
-/** Test/runtime catalog. Not NEXUS_92_MASTER. Ranks 7–9 exist; L0 does not deal them. */
+/** Runtime catalog. 20 Majors live here; 92-master is lore, not this object. */
 export function proxyCatalog(): CardCatalog {
-  const defs = [...minors(), ...majors()];
+  const defs = [...minors(), ...courtDefs(), ...majorDefs(), jokerDef()];
   const byId = new Map(defs.map((c) => [c.id, c]));
   return {
     id: "proxy-eight-lineages",
-    version: "0.2.0",
+    version: "0.3.0",
     get(cardId: string) {
       return byId.get(cardId);
     },

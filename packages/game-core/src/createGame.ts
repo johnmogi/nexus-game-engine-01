@@ -1,5 +1,7 @@
 import { rngFromSeed, rngShuffle, contentHash } from "./rng.js";
 import { assertConservation } from "./zones.js";
+import { isCourtMajor } from "./catalog/courts.js";
+import { isCharacterMajor, isNexusMajor, isTableMajor } from "./catalog/majors.js";
 import type {
   CardCatalog,
   CardInstance,
@@ -32,10 +34,18 @@ function playableInstances(catalog: CardCatalog, ruleset: Ruleset): CardInstance
   const instances: CardInstance[] = [];
   let n = 0;
   for (const def of catalog.all()) {
+    if (def.tags.includes("joker")) continue;
     const rankOk = allow.has(def.rank);
-    const majorOk = def.arcana === "major" && ruleset.experimental.dealMajors;
-    if (!rankOk && !majorOk) continue;
-    if (def.arcana === "minor" && !rankOk) continue;
+    const lines = ruleset.experimental.playableLineageIds ?? [];
+    const lineOk = !lines.length || !def.lineageId || lines.includes(def.lineageId);
+    if (def.arcana === "minor") {
+      if (!rankOk) continue;
+      if (!lineOk) continue;
+    } else if (isCourtMajor(def) && ruleset.experimental.dealCourts) {
+      if (!lineOk) continue;
+    } else if (!(def.arcana === "major" && ruleset.experimental.dealMajors && isTableMajor(def))) {
+      continue;
+    }
     n += 1;
     instances.push({ instanceId: `inst-${n}`, cardId: def.id });
   }
@@ -52,6 +62,7 @@ function makePlayers(count: PlayerCount, health: number): PlayerState[] {
       health,
       joker: { active: false },
       eclipse: false,
+      aspect: null,
     });
   }
   return players;
@@ -65,6 +76,19 @@ export function createGame(opts: CreateGameOptions): GameState {
 
   const dealt = playableInstances(opts.catalog, opts.ruleset);
   const shuffled = rngShuffle(rngFromSeed(opts.seed), dealt);
+  let n = dealt.length;
+  const holdNexus: CardInstance[] = [];
+  const holdChars: CardInstance[] = [];
+  for (const def of opts.catalog.all()) {
+    if (def.arcana !== "major") continue;
+    if (isNexusMajor(def)) {
+      n += 1;
+      holdNexus.push({ instanceId: `inst-${n}`, cardId: def.id });
+    } else if (isCharacterMajor(def)) {
+      n += 1;
+      holdChars.push({ instanceId: `inst-${n}`, cardId: def.id });
+    }
+  }
   const hash = contentHash([
     opts.ruleset.id,
     opts.ruleset.version,
@@ -91,6 +115,7 @@ export function createGame(opts: CreateGameOptions): GameState {
       clock: 0,
       outcome: "playing",
       maxTurns: opts.ruleset.experimental.maxTurns,
+      dial: "none",
     },
     gameRng: shuffled.rng,
     flags: {
@@ -99,11 +124,14 @@ export function createGame(opts: CreateGameOptions): GameState {
       lastEvent: null,
       lastEventRoll: null,
       commits: {},
+      combatRound: 0,
+      combatBowl: 0,
     },
     drawDeck: shuffled.items,
     roundTable: { left: [], middle: [], pd: [] },
     altar: { minors: [], major: [] },
     veil: [],
+    hold: { nexus: holdNexus, characters: holdChars },
     players: makePlayers(opts.playerCount, opts.ruleset.startingHealth),
     log: [
       {

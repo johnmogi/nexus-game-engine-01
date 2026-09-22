@@ -7,9 +7,10 @@ export function formatBoard(state: GameState, catalog: CardCatalog): string {
   const M = labelCard(catalog, top(state.roundTable.middle));
   const P = labelCard(catalog, top(state.roundTable.pd));
   const lines = [
-    `NEXUS L0  seed=${state.meta.seed}  hash=${state.meta.contentHash}`,
-    `players=${state.meta.playerCount}  round=${state.meta.round}/${state.meta.rounds}  turn=${state.meta.turn}/${state.meta.maxTurns}  active=${state.meta.activePlayerId}  phase=${state.meta.phase}  outcome=${state.meta.outcome}`,
+    `NEXUS ${state.meta.rulesetId.toUpperCase()}  seed=${state.meta.seed}  hash=${state.meta.contentHash}`,
+    `players=${state.meta.playerCount}  round=${state.meta.round}/${state.meta.rounds}  turn=${state.meta.turn}/${state.meta.maxTurns}  dial=${state.meta.dial}  active=${state.meta.activePlayerId}  phase=${state.meta.phase}  outcome=${state.meta.outcome}`,
     `Round Table   LEFT[${L}]   MIDDLE[${M}]   PD[${P}]   nexus=${state.flags.nexus}`,
+    `Hold Nexus=${(state.hold?.nexus ?? []).map((c) => labelCard(catalog, c)).join(" / ") || "—"}  Characters=${(state.hold?.characters ?? []).map((c) => labelCard(catalog, c)).join(", ") || "—"}`,
     `Altar minors=${state.altar.minors.length}  major=${state.altar.major.map((c) => labelCard(catalog, c)).join(",") || "—"}`,
     `Veil=${state.veil.length}  Deck=${state.drawDeck.length}  event=${state.flags.lastEvent ?? "—"} roll=${state.flags.lastEventRoll ?? "—"}`,
   ];
@@ -18,7 +19,7 @@ export function formatBoard(state: GameState, catalog: CardCatalog): string {
     const lin = p.lineage.at(-1) ? labelCard(catalog, p.lineage.at(-1)) : "—";
     const hand = p.hand.map((c) => labelCard(catalog, c)).join(", ") || "empty";
     lines.push(
-      `${star}${p.id}  HP ${p.health}  lineage ${lin}  eclipse=${p.eclipse}  hand[${p.hand.length}]: ${hand}`,
+      `${star}${p.id}  HP ${p.health}  lineage ${lin}  eclipse=${p.eclipse}  aspect=${p.aspect ?? "—"}  hand[${p.hand.length}]: ${hand}`,
     );
   }
   return lines.join("\n");

@@ -25,6 +25,10 @@ export function cloneState(state: GameState): GameState {
       major: state.altar.major.map((c) => ({ ...c })),
     },
     veil: state.veil.map((c) => ({ ...c })),
+    hold: {
+      nexus: (state.hold?.nexus ?? []).map((c) => ({ ...c })),
+      characters: (state.hold?.characters ?? []).map((c) => ({ ...c })),
+    },
     players: clonePlayers(state.players),
     log: state.log.slice(),
   };

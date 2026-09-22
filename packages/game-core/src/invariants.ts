@@ -37,7 +37,7 @@ export function evaluateInvariants(state: GameState, ctx: EngineCtx): InvariantW
     }
     for (const c of p.hand) {
       const def = ctx.catalog.get(c.cardId);
-      if (def?.arcana === "major") {
+      if (def?.arcana === "major" && !def.tags.includes("joker")) {
         warnings.push({
           code: "MAJOR_IN_HAND",
           detail: `${p.id} holds ${c.cardId}`,
@@ -46,7 +46,8 @@ export function evaluateInvariants(state: GameState, ctx: EngineCtx): InvariantW
     }
     if (p.lineage.length) {
       const first = ctx.catalog.get(p.lineage[0]!.cardId);
-      if (first && first.rank !== 1) {
+      const firstIsCharacter = first?.tags.includes("character");
+      if (first && first.rank !== 1 && !firstIsCharacter) {
         warnings.push({
           code: "INVALID_LINEAGE",
           detail: `${p.id} lineage does not start on Ace (rank ${first.rank})`,
@@ -58,10 +59,13 @@ export function evaluateInvariants(state: GameState, ctx: EngineCtx): InvariantW
       const def = ctx.catalog.get(c.cardId);
       if (!def) return;
       if (def.arcana === "major") {
-        warnings.push({
-          code: "INVALID_LINEAGE",
-          detail: `${p.id} lineage contains major ${c.cardId}`,
-        });
+        if (!def.tags.includes("character") || i !== p.lineage.length - 1 || !p.eclipse) {
+          warnings.push({
+            code: "INVALID_LINEAGE",
+            detail: `${p.id} lineage contains major ${c.cardId}`,
+          });
+        }
+        return;
       }
       if (def.lineageId) lineageIds.add(def.lineageId);
       if (i > 0) {
@@ -72,7 +76,12 @@ export function evaluateInvariants(state: GameState, ctx: EngineCtx): InvariantW
             detail: `${p.id} rank ${prev.rank} → ${def.rank} (step ${step})`,
           });
         }
-        if (prev?.lineageId && def.lineageId && prev.lineageId !== def.lineageId) {
+        if (
+          !ctx.ruleset.experimental.evolveByColor &&
+          prev?.lineageId &&
+          def.lineageId &&
+          prev.lineageId !== def.lineageId
+        ) {
           warnings.push({
             code: "INVALID_LINEAGE",
             detail: `${p.id} mixed lineages ${prev.lineageId}/${def.lineageId}`,
@@ -80,7 +89,7 @@ export function evaluateInvariants(state: GameState, ctx: EngineCtx): InvariantW
         }
       }
     });
-    if (lineageIds.size > 1) {
+    if (!ctx.ruleset.experimental.evolveByColor && lineageIds.size > 1) {
       warnings.push({
         code: "INVALID_LINEAGE",
         detail: `${p.id} mixed lineage ids ${[...lineageIds].join(",")}`,

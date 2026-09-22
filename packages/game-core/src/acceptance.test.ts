@@ -60,7 +60,7 @@ describe("M1.5 acceptance", () => {
     const ctx: EngineCtx = { ruleset, catalog };
     let state = createGame({ seed: "hand", playerCount: 2, ruleset, catalog });
     state = until(state, ctx, (s) => s.meta.phase === "TURN_START");
-    expect(state.players.every((p) => p.hand.length === 5)).toBe(true);
+    expect(state.players.every((p) => p.hand.length + Math.max(0, p.lineage.length - 1) === 5)).toBe(true);
     const end = play(state, ctx);
     expect(end.players.every((p) => p.hand.length <= 7)).toBe(true);
   });
@@ -131,7 +131,8 @@ describe("M1.5 acceptance", () => {
     const { state, ctx } = make(3, "cons");
     const start = instanceCount(state);
     const end = play(state, ctx);
-    expect(instanceCount(end)).toBe(start);
+    const jokers = end.players.reduce((n, p) => n + p.hand.filter((c) => c.cardId === "JOKER").length, 0);
+    expect(instanceCount(end) - jokers).toBe(start);
   });
 
   it("lineage lock never returns a prior form to veil", () => {
@@ -150,14 +151,15 @@ describe("M1.5 acceptance", () => {
     expect(autoDmg).toHaveLength(0);
   });
 
-  it("Majors never enter a player hand", () => {
+  it("Majors never enter a player hand (Joker Eclipse token is the exception)", () => {
     const ruleset = l0Ruleset({ experimental: { ...l0Ruleset().experimental, maxTurns: 24 } });
     const catalog = proxyCatalog();
     const ctx: EngineCtx = { ruleset, catalog };
     const end = play(createGame({ seed: "major-hand", playerCount: 2, ruleset, catalog }), ctx);
     for (const p of end.players) {
       for (const c of p.hand) {
-        expect(catalog.get(c.cardId)?.arcana).not.toBe("major");
+        const def = catalog.get(c.cardId);
+        expect(def?.arcana !== "major" || def.tags.includes("joker")).toBe(true);
       }
     }
   });
@@ -173,30 +175,56 @@ describe("M1.5 acceptance", () => {
       for (let i = 1; i < p.lineage.length; i++) {
         const prev = ctx.catalog.get(p.lineage[i - 1]!.cardId);
         const cur = ctx.catalog.get(p.lineage[i]!.cardId);
-        expect(cur?.lineageId).toBe(prev?.lineageId);
         expect(cur?.rank).toBe((prev?.rank ?? 0) + ctx.ruleset.experimental.evolutionStep);
+        if (!ctx.ruleset.experimental.evolveByColor) {
+          expect(cur?.lineageId).toBe(prev?.lineageId);
+        }
       }
     }
   });
 
-  it("Eclipse fires when two Majors sit on the Altar", () => {
-    const { state, ctx } = make(2, "eclipse-cap");
+  it("Eclipse fires when red + black courts sit on the Altar and grants Joker to hand", () => {
+    const ruleset = l0Ruleset();
+    const catalog = proxyCatalog();
+    const ctx: EngineCtx = { ruleset, catalog };
+    const state = createGame({ seed: "eclipse-cap", playerCount: 2, ruleset, catalog });
     expect(ctx.ruleset.experimental.altarMajorCap).toBe(2);
-    const majors = state.drawDeck.filter((c) => ctx.catalog.get(c.cardId)?.arcana === "major");
-    expect(majors.length).toBeGreaterThanOrEqual(2);
+    const black = state.drawDeck.find((c) => c.cardId === "SUN-ROSES-J");
+    const red = state.drawDeck.find((c) => c.cardId === "SUN-CRYSTALS-Q");
+    expect(black && red).toBeTruthy();
     const next = {
       ...state,
       meta: { ...state.meta, phase: "ECLIPSE_NEXUS_CHECK" as const },
-      drawDeck: state.drawDeck.filter((c) => ctx.catalog.get(c.cardId)?.arcana !== "major"),
-      altar: { ...state.altar, major: majors.slice(0, 2) },
+      drawDeck: state.drawDeck.filter((c) => c.cardId !== black!.cardId && c.cardId !== red!.cardId),
+      altar: { ...state.altar, major: [black!, red!] },
     };
-    const legal = getLegalActions(next, "P1", ctx);
-    expect(legal.some((a) => a.type === "ADVANCE")).toBe(true);
     const result = dispatch(next, { type: "ADVANCE", playerId: "P1" }, ctx);
     if (!result.ok) throw new Error(result.error.message);
     expect(result.state.log.some((e) => e.type === "ECLIPSE")).toBe(true);
+    expect(result.state.log.some((e) => e.type === "JOKER_TO_HAND")).toBe(true);
     expect(result.state.players[0]?.eclipse).toBe(true);
     expect(result.state.players[0]?.joker.active).toBe(true);
+    expect(result.state.players[0]?.hand.some((c) => c.cardId === "JOKER")).toBe(true);
+  });
+
+  it("two same-ink courts on the Altar do not Eclipse", () => {
+    const ruleset = l0Ruleset();
+    const catalog = proxyCatalog();
+    const ctx: EngineCtx = { ruleset, catalog };
+    const state = createGame({ seed: "eclipse-same-ink", playerCount: 2, ruleset, catalog });
+    const a = state.drawDeck.find((c) => c.cardId === "SUN-ROSES-J");
+    const b = state.drawDeck.find((c) => c.cardId === "SUN-VINES-Q");
+    expect(a && b).toBeTruthy();
+    const next = {
+      ...state,
+      meta: { ...state.meta, phase: "ECLIPSE_NEXUS_CHECK" as const },
+      drawDeck: state.drawDeck.filter((c) => c.cardId !== a!.cardId && c.cardId !== b!.cardId),
+      altar: { ...state.altar, major: [a!, b!] },
+    };
+    const result = dispatch(next, { type: "ADVANCE", playerId: "P1" }, ctx);
+    if (!result.ok) throw new Error(result.error.message);
+    expect(result.state.log.some((e) => e.type === "ECLIPSE")).toBe(false);
+    expect(result.state.players[0]?.eclipse).toBe(false);
   });
 });
 

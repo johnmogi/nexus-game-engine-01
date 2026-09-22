@@ -8,6 +8,8 @@ export type ZoneId =
   | "altar.minors"
   | "altar.major"
   | "veil"
+  | "hold.nexus"
+  | "hold.characters"
   | `player.${string}.hand`
   | `player.${string}.lineage`;
 
@@ -35,6 +37,8 @@ export function listOccupancy(state: GameState): Occupancy[] {
   push("altar.minors", state.altar.minors);
   push("altar.major", state.altar.major);
   push("veil", state.veil);
+  push("hold.nexus", state.hold?.nexus ?? []);
+  push("hold.characters", state.hold?.characters ?? []);
   for (const player of state.players) {
     push(`player.${player.id}.hand`, player.hand);
     push(`player.${player.id}.lineage`, lineageAsList(player));

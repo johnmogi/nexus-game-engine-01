@@ -22,7 +22,7 @@ import {
 } from "@nexus/game-core";
 import { formatRunSeed, recordFromState, type RunRecord } from "./metrics.js";
 import { buildSummary, printSummary } from "./summary.js";
-import { buildBatchExport, writeBatchExport, type BatchExportFiles } from "./export.js";
+import { buildBatchExport, type BatchExportFiles } from "./export.js";
 
 export type GameResult = RunRecord;
 
@@ -50,6 +50,24 @@ function pick(legal: Action[], policySeed: string, step: number): Action {
   return a;
 }
 
+function takeAction(
+  state: GameState,
+  engine: EngineCtx,
+  seed: string,
+  steps: number,
+): { state: GameState; action: Action } {
+  let legal = getLegalActions(state, actorId(state), engine);
+  if (!legal.length) {
+    const other = state.players.find((p) => getLegalActions(state, p.id, engine).length);
+    if (!other) throw new Error(`no legal actions at ${state.meta.phase}`);
+    legal = getLegalActions(state, other.id, engine);
+  }
+  const action = pick(legal, `${seed}|policy`, steps);
+  const result = dispatch(state, action, engine);
+  if (!result.ok) throw new Error(result.error.message);
+  return { state: result.state, action };
+}
+
 export function playGame(opts: {
   seed: string;
   playerCount: PlayerCount;
@@ -68,26 +86,42 @@ export function playGame(opts: {
   let steps = 0;
   for (; steps < max; steps++) {
     if (state.meta.outcome !== "playing" || state.meta.phase === "OVER") break;
-    const legal = getLegalActions(state, actorId(state), engine);
-    if (!legal.length) {
-      const other = state.players.find((p) => getLegalActions(state, p.id, engine).length);
-      if (!other) throw new Error(`no legal actions at ${state.meta.phase}`);
-      const more = getLegalActions(state, other.id, engine);
-      const action = pick(more, `${opts.seed}|policy`, steps);
-      const result = dispatch(state, action, engine);
-      if (!result.ok) throw new Error(result.error.message);
-      state = result.state;
-      continue;
-    }
-    const action = pick(legal, `${opts.seed}|policy`, steps);
-    const result = dispatch(state, action, engine);
-    if (!result.ok) throw new Error(result.error.message);
-    state = result.state;
+    state = takeAction(state, engine, opts.seed, steps).state;
   }
   if (state.meta.outcome === "playing") {
     throw new Error(`seed ${opts.seed} hit maxSteps`);
   }
   return { state, steps, ruleset };
+}
+
+export function playGameFrames(opts: {
+  seed: string;
+  playerCount: PlayerCount;
+  ruleset?: Ruleset;
+  maxSteps?: number;
+}): { frames: GameState[]; actions: Action[]; ruleset: Ruleset } {
+  const ruleset = opts.ruleset ?? l0Ruleset();
+  const engine = ctx(ruleset);
+  let state = createGame({
+    seed: opts.seed,
+    playerCount: opts.playerCount,
+    ruleset,
+    catalog: engine.catalog,
+  });
+  const frames: GameState[] = [state];
+  const actions: Action[] = [];
+  const max = opts.maxSteps ?? 5000;
+  for (let steps = 0; steps < max; steps++) {
+    if (state.meta.outcome !== "playing" || state.meta.phase === "OVER") break;
+    const next = takeAction(state, engine, opts.seed, steps);
+    state = next.state;
+    actions.push(next.action);
+    frames.push(state);
+  }
+  if (state.meta.outcome === "playing") {
+    throw new Error(`seed ${opts.seed} hit maxSteps`);
+  }
+  return { frames, actions, ruleset };
 }
 
 export function summarize(state: GameState, seed: string, steps: number, ruleset: Ruleset): RunRecord {
@@ -170,4 +204,4 @@ export function printBatch(rows: RunRecord[]): string {
   return printSummary(buildSummary(rows));
 }
 
-export { writeBatchExport, buildBatchExport, formatRunSeed, buildSummary };
+export { buildBatchExport, formatRunSeed, buildSummary };

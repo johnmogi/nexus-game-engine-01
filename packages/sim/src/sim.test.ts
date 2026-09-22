@@ -3,7 +3,7 @@ import { compileLabDocument, createGame, l0Ruleset, parseLabDocument, proxyCatal
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { batch, formatRunSeed, playGame } from "./run.js";
+import { batch, playGame, formatRunSeed, playGameFrames } from "./run.js";
 import { buildBatchExport } from "./export.js";
 import { buildSummary } from "./summary.js";
 
@@ -97,13 +97,28 @@ describe("sim", () => {
     expect(built.files["runs.csv"]).toContain("seed,");
   });
 
-  it("L1 27-turn ruleset finishes", () => {
+  it("L1 27-turn ruleset can finish (clock or party_down)", () => {
     const l1 = parseLabDocument(JSON.parse(readFileSync(resolve(repo, "config/l1.rules.json"), "utf8")));
     const { ruleset, playerCount } = compileLabDocument(l1);
     expect(ruleset.experimental.maxTurns).toBe(27);
     const { state } = playGame({ seed: "l1-one", playerCount, ruleset });
-    expect(state.meta.turn).toBe(27);
-    expect(state.meta.round).toBe(3);
-    expect(state.log.some((e) => e.type === "ROUND_ENDED" && e.to === 4)).toBe(false);
+    expect(state.meta.outcome).not.toBe("playing");
+    expect(state.meta.phase).toBe("OVER");
+    expect(state.meta.maxTurns).toBe(27);
+    expect(state.meta.turn).toBeLessThanOrEqual(27);
+    if (state.meta.outcome === "turn_limit") {
+      expect(state.meta.turn).toBe(27);
+      expect(state.meta.round).toBe(3);
+    }
+  });
+
+  it("playGameFrames records SETUP then a finished board with cards in play", () => {
+    const { frames, actions } = playGameFrames({ seed: "frames", playerCount: 2 });
+    expect(frames[0]?.meta.phase).toBe("SETUP");
+    expect(frames[0]?.players.every((p) => p.hand.length === 0)).toBe(true);
+    const end = frames.at(-1)!;
+    expect(end.meta.outcome).not.toBe("playing");
+    expect(actions.length).toBe(frames.length - 1);
+    expect(end.players.some((p) => p.hand.length > 0 || p.lineage.length > 0)).toBe(true);
   });
 });

@@ -1,5 +1,5 @@
-import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   compileLabDocument,
@@ -8,7 +8,8 @@ import {
   type ExperimentalRules,
   type PlayerCount,
 } from "@nexus/game-core";
-import { batch, printBatch, printTrace, writeBatchExport } from "./run.js";
+import { batch, printBatch, printTrace } from "./run.js";
+import { writeBatchExport } from "./writeExport.js";
 
 function arg(name: string, fallback?: string): string | undefined {
   const i = process.argv.indexOf(name);
@@ -27,7 +28,14 @@ function num(name: string, fallback: number): number {
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const defaultRules = resolve(repoRoot, "config/l0.rules.json");
-const rulesPath = arg("--rules", defaultRules) ?? defaultRules;
+const rulesArg = arg("--rules");
+const rulesPath = (() => {
+  if (!rulesArg) return defaultRules;
+  if (isAbsolute(rulesArg)) return rulesArg;
+  const fromRepo = resolve(repoRoot, rulesArg);
+  if (existsSync(fromRepo)) return fromRepo;
+  return resolve(process.cwd(), rulesArg);
+})();
 
 const loaded = parseLabDocument(JSON.parse(readFileSync(rulesPath, "utf8")) as unknown);
 const compiled = compileLabDocument(loaded);

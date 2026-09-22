@@ -53,12 +53,15 @@ Use `npm run sim`, not `npm sim`. Every batch writes `exports/<timestamp>_<versi
 - Majors never enter a hand; PD, then next-turn Altar
 - Lineage is **Ace → +2 same lineage** (Ace → 3 → 5). Illegal Reward dumps go to the Veil
 - Ace–6 dealt; 7–9 stay catalog-only
+- **L0 deals four Sun lineages** (roses, vines, vessels, crystals) as a soft entry. **L1 deals all eight**
+- L1 **day dial**: 2p day/day/night/night; 3p day/night; 4p day/day/night with a per-round shift so a seat is not glued to day. Day +1 sunlight commits, night +1 moonlight commits
 - Barrier / Dialogue: hidden COMMIT, then threshold
-- Eclipse: two Majors on the Altar → Joker (+1). Altar cap is 2
+- Eclipse: **red + black** courts/Majors on the Altar (or a table pair) → **Joker token into hand** (+1). Altar cap is 2. Then L1 offers **Wise / Daydreamer / Lucid Dreamer / Sheman** (impacts pending)
+- **20 Majors** in catalog: Sun + Moon Nexus (rank 0) sit in hold, outside the deck; Wise / Daydreamer / Lucid Dreamer / Sheman wait for Eclipse; L1 deals the other 14 (ranks 2 and 4–9)
 - Hand limit 7; Veil recycles into draw
 - Invariant warnings in the Lab (`MAJOR_IN_HAND`, `INVALID_LINEAGE`, …)
 
-L0 is a short slice (9 table advances). L1 is the same loop at 27 turns — already lethal without healing. The four characters above are art only; they are not engine objects yet.
+L0 is a short slice (9 table advances, four Sun lines, no table Majors). L1 is 27 turns, eight lineages, day dial, and 14 table Majors. Character impacts are not encoded yet.
 
 ## Graphics
 

@@ -1,0 +1,21 @@
+/** Titles from the Crystals & Earth production sheet. Impacts are not encoded yet. */
+export const MINOR_NAMES: Record<string, string> = {
+  "SUN-CRYSTALS-1": "Ace of Crystals",
+  "SUN-CRYSTALS-2": "Two of Crystals",
+  "SUN-CRYSTALS-3": "Princess of Crystals",
+  "SUN-CRYSTALS-4": "Four of Crystals",
+  "SUN-CRYSTALS-5": "Five of Crystals",
+  "SUN-CRYSTALS-6": "Father of Crystals (King)",
+  "SUN-CRYSTALS-7": "Seven of Crystals",
+  "SUN-CRYSTALS-8": "Eight of Crystals",
+  "SUN-CRYSTALS-9": "Mother of Crystals (Queen)",
+  "MOON-EARTH-1": "Ace of Earth",
+  "MOON-EARTH-2": "Two of Earth",
+  "MOON-EARTH-3": "Child of Earth",
+  "MOON-EARTH-4": "Four of Earth",
+  "MOON-EARTH-5": "Five of Earth",
+  "MOON-EARTH-6": "Mother of Earth (Queen)",
+  "MOON-EARTH-7": "Seven of Earth",
+  "MOON-EARTH-8": "Eight of Earth",
+  "MOON-EARTH-9": "Father of Earth (King)",
+};
