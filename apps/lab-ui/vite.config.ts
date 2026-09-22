@@ -1,12 +1,21 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
-import { copyFileSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const exportsRoot = path.join(root, "exports");
 const configDir = path.join(root, "config");
+const graphicsRoot = path.join(root, "graphics");
 const publicDir = path.resolve(__dirname, "public");
 
 /** Ship config/*.rules.json at the site root (dev middleware + production static). */
@@ -16,6 +25,70 @@ function copyRulesToPublic() {
     if (!name.endsWith(".rules.json")) continue;
     copyFileSync(path.join(configDir, name), path.join(publicDir, name));
   }
+}
+
+function contentTypeFor(file: string): string {
+  const ext = path.extname(file).toLowerCase();
+  if (ext === ".png") return "image/png";
+  if (ext === ".jpg" || ext === ".jpeg") return "image/jpeg";
+  if (ext === ".webp") return "image/webp";
+  if (ext === ".gif") return "image/gif";
+  if (ext === ".svg") return "image/svg+xml";
+  if (ext === ".md") return "text/markdown; charset=utf-8";
+  return "application/octet-stream";
+}
+
+function copyGraphicsTree(src: string, dest: string) {
+  mkdirSync(dest, { recursive: true });
+  for (const entry of readdirSync(src, { withFileTypes: true })) {
+    const name = entry.name;
+    if (name === "_source" || name.startsWith("call_")) continue;
+    const from = path.join(src, name);
+    const to = path.join(dest, name);
+    if (entry.isDirectory()) {
+      copyGraphicsTree(from, to);
+      continue;
+    }
+    if (!entry.isFile()) continue;
+    copyFileSync(from, to);
+  }
+}
+
+/** Serve /graphics from repo graphics/ in dev; copy into dist on build. */
+function graphicsPlugin(): Plugin {
+  return {
+    name: "nexus-graphics",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const pathName = decodeURIComponent(req.url?.split("?")[0] ?? "");
+        if (!pathName.startsWith("/graphics/") && pathName !== "/graphics") {
+          next();
+          return;
+        }
+        const rel = pathName === "/graphics" ? "" : pathName.slice("/graphics/".length);
+        if (rel.includes("..")) {
+          res.statusCode = 400;
+          res.end("bad path");
+          return;
+        }
+        const file = path.join(graphicsRoot, rel);
+        if (!existsSync(file) || !statSync(file).isFile()) {
+          res.statusCode = 404;
+          res.end("not found");
+          return;
+        }
+        res.setHeader("content-type", contentTypeFor(file));
+        res.setHeader("cache-control", "no-cache");
+        res.end(readFileSync(file));
+      });
+    },
+    writeBundle(output) {
+      const outDir = output.dir ?? path.resolve(__dirname, "dist");
+      const dest = path.join(outDir, "graphics");
+      if (!existsSync(graphicsRoot)) return;
+      copyGraphicsTree(graphicsRoot, dest);
+    },
+  };
 }
 
 function nexusLabPlugin(): Plugin {
@@ -64,7 +137,7 @@ function nexusLabPlugin(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), nexusLabPlugin()],
+  plugins: [react(), graphicsPlugin(), nexusLabPlugin()],
   publicDir: "public",
   resolve: {
     alias: {

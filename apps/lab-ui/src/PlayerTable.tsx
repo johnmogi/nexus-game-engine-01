@@ -9,6 +9,8 @@ import {
   type PlayerState,
 } from "@nexus/game-core";
 import { Card, DeckPile, face, forceNote, fogCard } from "./Card";
+import { CharacterSelect } from "./CharacterSelect";
+import { CombatScreen } from "./CombatScreen";
 import { storyLines } from "./story";
 
 const catalog = proxyCatalog();
@@ -137,6 +139,10 @@ function ActButtons(props: {
   );
 }
 
+function commitsPending(legal: Action[]): boolean {
+  return legal.some((a) => a.type === "COMMIT");
+}
+
 export function PlayerTable(props: {
   state: GameState;
   ctx: EngineCtx;
@@ -153,6 +159,19 @@ export function PlayerTable(props: {
   const me = state.players.find((p) => p.id === viewerId) ?? state.players[0]!;
   const inEvent = Boolean(prompt.kind) && (state.meta.phase === "RESOLVE_EVENT" || state.meta.phase === "REWARD");
   const eventActs = (a: Action) => a.type === "COMMIT" || a.type === "TAKE_REWARD";
+  const characterPicks = legal.filter((a) => a.type === "CHOOSE_CHARACTER");
+  const inCombat =
+    (prompt.kind === "barrier" || prompt.kind === "dialogue") &&
+    state.meta.phase === "RESOLVE_EVENT" &&
+    commitsPending(legal);
+
+  if (characterPicks.length) {
+    return (
+      <section className="table tech-view">
+        <CharacterSelect legal={legal} canPlay={canPlay} onAct={onAct} />
+      </section>
+    );
+  }
 
   return (
     <section className="table tech-view">
@@ -183,7 +202,11 @@ export function PlayerTable(props: {
         </div>
       </div>
 
-      <div className="pane-grid">
+      {inCombat ? (
+        <CombatScreen state={state} ctx={ctx} legal={legal} canPlay={canPlay} fog={fog} onAct={onAct} />
+      ) : null}
+
+      <div className={`pane-grid${inCombat ? " dimmed-behind-combat" : ""}`}>
         <div className="pane pane-play">
           <h2 className="pane-title">Play area</h2>
           <p className="pane-meta">
@@ -198,14 +221,14 @@ export function PlayerTable(props: {
               card={fogCard(state.roundTable.left[0], fog)}
               note={forceNote(ctx, state.roundTable.left[0], fog)}
               hot={Boolean(prompt.kind)}
-              size="lg"
+              size="xl"
             />
             <Card
               title="MIDDLE"
               card={fogCard(state.roundTable.middle[0], fog)}
               note={forceNote(ctx, state.roundTable.middle[0], fog)}
               hot={prompt.kind === "dialogue"}
-              size="lg"
+              size="xl"
             />
             <Card
               title="PD"
@@ -220,7 +243,7 @@ export function PlayerTable(props: {
               <h3>Altar minors</h3>
               <div className="altar-row">
                 {state.altar.minors.length
-                  ? state.altar.minors.map((c) => <Card key={c.instanceId} title="minor" card={c} />)
+                  ? state.altar.minors.map((c) => <Card key={c.instanceId} title="minor" card={c} size="md" />)
                   : <Card title="minor" />}
               </div>
             </div>
@@ -228,7 +251,7 @@ export function PlayerTable(props: {
               <h3>Altar majors · Eclipse needs same-face red+black (L0) or Sun↔Moon pair (L1)</h3>
               <div className="altar-row">
                 {state.altar.major.length
-                  ? state.altar.major.map((c) => <Card key={c.instanceId} title="major" card={c} />)
+                  ? state.altar.major.map((c) => <Card key={c.instanceId} title="major" card={c} size="md" />)
                   : <Card title="major" />}
               </div>
             </div>
@@ -257,6 +280,7 @@ export function PlayerTable(props: {
                           title={i === 0 ? "Starting Ace" : `+${i * 2}`}
                           card={c}
                           note={i === 0 ? "dealt at opening" : "auto from hand"}
+                          size="md"
                         />
                       ))
                     ) : (
@@ -269,9 +293,9 @@ export function PlayerTable(props: {
                     {p.hand.length === 0 ? (
                       <span>empty</span>
                     ) : showHand ? (
-                      p.hand.map((c) => <Card key={c.instanceId} title="hand" card={c} size="sm" />)
+                      p.hand.map((c) => <Card key={c.instanceId} title="hand" card={c} size="md" />)
                     ) : (
-                      p.hand.map((c) => <Card key={c.instanceId} title="hand" card={fogCard(c, true)} size="sm" />)
+                      p.hand.map((c) => <Card key={c.instanceId} title="hand" card={fogCard(c, true)} size="md" />)
                     )}
                   </div>
                 </div>
@@ -304,7 +328,7 @@ export function PlayerTable(props: {
         </div>
       </div>
 
-      {inEvent || prompt.kind ? (
+      {!inCombat && (inEvent || prompt.kind) ? (
         <div className="pane pane-event">
           <h2 className="pane-title">Event</h2>
           {prompt.kind ? (
@@ -319,24 +343,23 @@ export function PlayerTable(props: {
                     Challenge <b>{prompt.challenge}</b>
                     {prompt.opportunity ? ` · +${prompt.opportunity} opportunity` : ""} · {prompt.seats}
                   </p>
-                  {prompt.kind === "barrier" || prompt.kind === "dialogue" ? (
-                    <p>
-                      Bowl so far <b>{prompt.combatBowl}</b>
-                      {prompt.combatRounds > 1
-                        ? ` · round ${prompt.combatRound}/${prompt.combatRounds}`
-                        : ""}
-                    </p>
-                  ) : null}
                 </div>
               </div>
               <div className="event-obstacles">
-                <Card title="LEFT obstacle" card={fogCard(state.roundTable.left[0], fog)} note={forceNote(ctx, state.roundTable.left[0], fog)} hot />
+                <Card
+                  title="LEFT obstacle"
+                  card={fogCard(state.roundTable.left[0], fog)}
+                  note={forceNote(ctx, state.roundTable.left[0], fog)}
+                  hot
+                  size="lg"
+                />
                 {prompt.kind === "dialogue" ? (
                   <Card
                     title="MIDDLE obstacle"
                     card={fogCard(state.roundTable.middle[0], fog)}
                     note={forceNote(ctx, state.roundTable.middle[0], fog)}
                     hot
+                    size="lg"
                   />
                 ) : null}
               </div>
@@ -348,11 +371,13 @@ export function PlayerTable(props: {
         </div>
       ) : null}
 
-      <div className="pane pane-advisor">
-        <h2 className="pane-title">Advisor</h2>
-        <p>{advisorCopy(state, ctx, prompt)}</p>
-        <ActButtons legal={legal} state={state} canPlay={canPlay} onAct={onAct} />
-      </div>
+      {!inCombat && !characterPicks.length ? (
+        <div className="pane pane-advisor">
+          <h2 className="pane-title">Advisor</h2>
+          <p>{advisorCopy(state, ctx, prompt)}</p>
+          <ActButtons legal={legal} state={state} canPlay={canPlay} onAct={onAct} />
+        </div>
+      ) : null}
 
       <div className="pane pane-story">
         <h2 className="pane-title">Story</h2>
