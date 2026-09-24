@@ -6,5 +6,15 @@ dist/
 coverage/
 exports/*
 !exports/.gitkeep
+
+# Large / original graphics — do not upload
 graphics/_source/
+graphics/_source/**
+
+# Accidental PNG masters beside compressed workbench JPGs
+graphics/dm-workbench/**/*.png
+
+# Opaque OpenAI card dumps (rename before committing)
+graphics/cards/call_*.png
+
 .vercel
