@@ -1,7 +1,7 @@
 [
   {
     "id": "nexus-pangea-mark",
-    "path": "/assets/brand/nexus-pangea-mark.png",
+    "path": "/graphics/dm-workbench/brand/nexus-pangea-mark.jpg",
     "category": "brand",
     "width": 1254,
     "height": 1254,
@@ -11,7 +11,7 @@
   },
   {
     "id": "adam-maker-mark",
-    "path": "/assets/brand/adam-maker-mark.png",
+    "path": "/graphics/dm-workbench/brand/adam-maker-mark.jpg",
     "category": "brand",
     "width": 1254,
     "height": 1254,
@@ -21,7 +21,7 @@
   },
   {
     "id": "module-map",
-    "path": "/assets/modules/map.png",
+    "path": "/graphics/dm-workbench/modules/map.jpg",
     "category": "modules",
     "width": 768,
     "height": 341,
@@ -31,7 +31,7 @@
   },
   {
     "id": "module-hero",
-    "path": "/assets/modules/hero.png",
+    "path": "/graphics/dm-workbench/modules/hero.jpg",
     "category": "modules",
     "width": 768,
     "height": 341,
@@ -41,7 +41,7 @@
   },
   {
     "id": "module-npc",
-    "path": "/assets/modules/npc.png",
+    "path": "/graphics/dm-workbench/modules/npc.jpg",
     "category": "modules",
     "width": 768,
     "height": 341,
@@ -51,7 +51,7 @@
   },
   {
     "id": "module-enemy",
-    "path": "/assets/modules/enemy.png",
+    "path": "/graphics/dm-workbench/modules/enemy.jpg",
     "category": "modules",
     "width": 768,
     "height": 341,
@@ -61,7 +61,7 @@
   },
   {
     "id": "module-items",
-    "path": "/assets/modules/items.png",
+    "path": "/graphics/dm-workbench/modules/items.jpg",
     "category": "modules",
     "width": 768,
     "height": 341,
@@ -71,7 +71,7 @@
   },
   {
     "id": "module-story",
-    "path": "/assets/modules/story.png",
+    "path": "/graphics/dm-workbench/modules/story.jpg",
     "category": "modules",
     "width": 768,
     "height": 341,
@@ -81,7 +81,7 @@
   },
   {
     "id": "element-air",
-    "path": "/assets/elements/air.png",
+    "path": "/graphics/dm-workbench/elements/air.jpg",
     "category": "elements",
     "width": 1024,
     "height": 1024,
@@ -91,7 +91,7 @@
   },
   {
     "id": "element-fire",
-    "path": "/assets/elements/fire.png",
+    "path": "/graphics/dm-workbench/elements/fire.jpg",
     "category": "elements",
     "width": 1024,
     "height": 1024,
@@ -101,7 +101,7 @@
   },
   {
     "id": "element-water",
-    "path": "/assets/elements/water.png",
+    "path": "/graphics/dm-workbench/elements/water.jpg",
     "category": "elements",
     "width": 1024,
     "height": 1024,
@@ -111,7 +111,7 @@
   },
   {
     "id": "element-earth",
-    "path": "/assets/elements/earth.png",
+    "path": "/graphics/dm-workbench/elements/earth.jpg",
     "category": "elements",
     "width": 1024,
     "height": 1024,
@@ -121,7 +121,7 @@
   },
   {
     "id": "room-entrance",
-    "path": "/assets/room-types/entrance.png",
+    "path": "/graphics/dm-workbench/room-types/entrance.jpg",
     "category": "room-types",
     "width": 1024,
     "height": 1024,
@@ -131,7 +131,7 @@
   },
   {
     "id": "room-exit",
-    "path": "/assets/room-types/exit.png",
+    "path": "/graphics/dm-workbench/room-types/exit.jpg",
     "category": "room-types",
     "width": 1024,
     "height": 1024,
@@ -141,7 +141,7 @@
   },
   {
     "id": "room-combat",
-    "path": "/assets/room-types/combat.png",
+    "path": "/graphics/dm-workbench/room-types/combat.jpg",
     "category": "room-types",
     "width": 1024,
     "height": 1024,
@@ -151,7 +151,7 @@
   },
   {
     "id": "room-treasure",
-    "path": "/assets/room-types/treasure.png",
+    "path": "/graphics/dm-workbench/room-types/treasure.jpg",
     "category": "room-types",
     "width": 1024,
     "height": 1024,
@@ -161,7 +161,7 @@
   },
   {
     "id": "room-puzzle",
-    "path": "/assets/room-types/puzzle.png",
+    "path": "/graphics/dm-workbench/room-types/puzzle.jpg",
     "category": "room-types",
     "width": 1024,
     "height": 1024,
@@ -171,7 +171,7 @@
   },
   {
     "id": "room-npc",
-    "path": "/assets/room-types/npc.png",
+    "path": "/graphics/dm-workbench/room-types/npc.jpg",
     "category": "room-types",
     "width": 1024,
     "height": 1024,
@@ -181,7 +181,7 @@
   },
   {
     "id": "room-story",
-    "path": "/assets/room-types/story.png",
+    "path": "/graphics/dm-workbench/room-types/story.jpg",
     "category": "room-types",
     "width": 1024,
     "height": 1024,
@@ -191,7 +191,7 @@
   },
   {
     "id": "room-rest",
-    "path": "/assets/room-types/rest.png",
+    "path": "/graphics/dm-workbench/room-types/rest.jpg",
     "category": "room-types",
     "width": 1024,
     "height": 1024,
@@ -201,7 +201,7 @@
   },
   {
     "id": "room-shop",
-    "path": "/assets/room-types/shop.png",
+    "path": "/graphics/dm-workbench/room-types/shop.jpg",
     "category": "room-types",
     "width": 1024,
     "height": 1024,
@@ -211,7 +211,7 @@
   },
   {
     "id": "room-mystery",
-    "path": "/assets/room-types/mystery.png",
+    "path": "/graphics/dm-workbench/room-types/mystery.jpg",
     "category": "room-types",
     "width": 1254,
     "height": 1254,
@@ -221,7 +221,7 @@
   },
   {
     "id": "room-special",
-    "path": "/assets/room-types/special.png",
+    "path": "/graphics/dm-workbench/room-types/special.jpg",
     "category": "room-types",
     "width": 1024,
     "height": 1024,
@@ -231,7 +231,7 @@
   },
   {
     "id": "room-boss",
-    "path": "/assets/room-types/boss.png",
+    "path": "/graphics/dm-workbench/room-types/boss.jpg",
     "category": "room-types",
     "width": 1024,
     "height": 1024,
@@ -241,7 +241,7 @@
   },
   {
     "id": "hero-air",
-    "path": "/assets/characters/hero-air.png",
+    "path": "/graphics/dm-workbench/characters/hero-air.jpg",
     "category": "characters",
     "width": 615,
     "height": 639,
@@ -251,7 +251,7 @@
   },
   {
     "id": "hero-fire",
-    "path": "/assets/characters/hero-fire.png",
+    "path": "/graphics/dm-workbench/characters/hero-fire.jpg",
     "category": "characters",
     "width": 615,
     "height": 639,
@@ -261,7 +261,7 @@
   },
   {
     "id": "hero-water",
-    "path": "/assets/characters/hero-water.png",
+    "path": "/graphics/dm-workbench/characters/hero-water.jpg",
     "category": "characters",
     "width": 615,
     "height": 639,
@@ -271,7 +271,7 @@
   },
   {
     "id": "hero-earth",
-    "path": "/assets/characters/hero-earth.png",
+    "path": "/graphics/dm-workbench/characters/hero-earth.jpg",
     "category": "characters",
     "width": 615,
     "height": 639,
@@ -281,7 +281,7 @@
   },
   {
     "id": "frozen-gate",
-    "path": "/assets/adventures/frozen-gate.png",
+    "path": "/graphics/dm-workbench/adventures/frozen-gate.jpg",
     "category": "adventures",
     "width": 1672,
     "height": 941,
@@ -291,7 +291,7 @@
   },
   {
     "id": "mesahara-split-tower",
-    "path": "/assets/realm/mesahara-split-tower.png",
+    "path": "/graphics/dm-workbench/realm/mesahara-split-tower.jpg",
     "category": "realm",
     "width": 1536,
     "height": 1024,
@@ -301,7 +301,7 @@
   },
   {
     "id": "monster-ash-scarab",
-    "path": "/assets/entities/monster-ash-scarab.png",
+    "path": "/graphics/dm-workbench/entities/monster-ash-scarab.jpg",
     "category": "entities",
     "width": 607,
     "height": 647,
@@ -311,7 +311,7 @@
   },
   {
     "id": "monster-frost-beetle",
-    "path": "/assets/entities/monster-frost-beetle.png",
+    "path": "/graphics/dm-workbench/entities/monster-frost-beetle.jpg",
     "category": "entities",
     "width": 607,
     "height": 647,
@@ -321,7 +321,7 @@
   },
   {
     "id": "npc-frozen-cartographer",
-    "path": "/assets/entities/npc-frozen-cartographer.png",
+    "path": "/graphics/dm-workbench/entities/npc-frozen-cartographer.jpg",
     "category": "entities",
     "width": 607,
     "height": 647,
@@ -331,7 +331,7 @@
   },
   {
     "id": "npc-scarab-keeper",
-    "path": "/assets/entities/npc-scarab-keeper.png",
+    "path": "/graphics/dm-workbench/entities/npc-scarab-keeper.jpg",
     "category": "entities",
     "width": 607,
     "height": 647,
@@ -341,7 +341,7 @@
   },
   {
     "id": "item-sandsteel-blade",
-    "path": "/assets/entities/item-sandsteel-blade.png",
+    "path": "/graphics/dm-workbench/entities/item-sandsteel-blade.jpg",
     "category": "entities",
     "width": 612,
     "height": 1284,
@@ -351,7 +351,7 @@
   },
   {
     "id": "item-gate-sigil",
-    "path": "/assets/entities/item-gate-sigil.png",
+    "path": "/graphics/dm-workbench/entities/item-gate-sigil.jpg",
     "category": "entities",
     "width": 613,
     "height": 1284,
@@ -361,7 +361,7 @@
   },
   {
     "id": "crt-scanlines",
-    "path": "/assets/crt/scanlines.png",
+    "path": "/graphics/dm-workbench/crt/scanlines.jpg",
     "category": "crt",
     "width": 1024,
     "height": 1024,
@@ -371,7 +371,7 @@
   },
   {
     "id": "crt-noise",
-    "path": "/assets/crt/noise.png",
+    "path": "/graphics/dm-workbench/crt/noise.jpg",
     "category": "crt",
     "width": 1024,
     "height": 1024,
@@ -381,7 +381,7 @@
   },
   {
     "id": "crt-vignette",
-    "path": "/assets/crt/vignette.png",
+    "path": "/graphics/dm-workbench/crt/vignette.jpg",
     "category": "crt",
     "width": 2048,
     "height": 1152,

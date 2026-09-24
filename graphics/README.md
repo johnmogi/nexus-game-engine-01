@@ -10,6 +10,7 @@ Compressed art lives in git. Drop **new originals** in `_source/` (gitignored) o
 | `cards/moonlight/air` `fire` `water` `earth` | Moon minor ranks |
 | `cards/majors/` | 20 Majors: `{id}.jpg` e.g. `SUN-MAJ-02.jpg`. Rank 0 Nexus; #1 and #3 are characters |
 | `ui/` | Lab / HUD chrome + layout mocks (`table-mock.jpg`, `combat-mock.jpg`, `hud-kit.jpg`) |
+| `dm-workbench/` | Dungeon Master workbench art (compressed JPG): brand, modules, characters, elements, realm (split tower), entities, room-types, adventures |
 | `inbox/` | Unsorted; do not leave files here long |
 
 **Filenames (Lab resolves these):**
