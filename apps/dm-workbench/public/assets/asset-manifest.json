@@ -1,0 +1,392 @@
+[
+  {
+    "id": "nexus-pangea-mark",
+    "path": "/assets/brand/nexus-pangea-mark.png",
+    "category": "brand",
+    "width": 1254,
+    "height": 1254,
+    "transparent": "yes",
+    "intended UI slot": "Header emblem / boot mark",
+    "generation prompt summary": "Textless Pangea/Nexus mark: divided continental forms reconnecting through luminous seam."
+  },
+  {
+    "id": "adam-maker-mark",
+    "path": "/assets/brand/adam-maker-mark.png",
+    "category": "brand",
+    "width": 1254,
+    "height": 1254,
+    "transparent": "yes",
+    "intended UI slot": "Maker signature / credits",
+    "generation prompt summary": "Adam Douglas maker seal, gate plus pen-nib world-builder emblem."
+  },
+  {
+    "id": "module-map",
+    "path": "/assets/modules/map.png",
+    "category": "modules",
+    "width": 768,
+    "height": 341,
+    "transparent": "no",
+    "intended UI slot": "Workbench MAP module",
+    "generation prompt summary": "Restrained Mesahara technical cartography panel art."
+  },
+  {
+    "id": "module-hero",
+    "path": "/assets/modules/hero.png",
+    "category": "modules",
+    "width": 768,
+    "height": 341,
+    "transparent": "no",
+    "intended UI slot": "Workbench HERO module",
+    "generation prompt summary": "Lone explorer field-study panel art."
+  },
+  {
+    "id": "module-npc",
+    "path": "/assets/modules/npc.png",
+    "category": "modules",
+    "width": 768,
+    "height": 341,
+    "transparent": "no",
+    "intended UI slot": "Workbench NPC module",
+    "generation prompt summary": "Mesahara archivist/traveler portrait panel art."
+  },
+  {
+    "id": "module-enemy",
+    "path": "/assets/modules/enemy.png",
+    "category": "modules",
+    "width": 768,
+    "height": 341,
+    "transparent": "no",
+    "intended UI slot": "Workbench ENEMY module",
+    "generation prompt summary": "Elemental guardian/threat study panel art."
+  },
+  {
+    "id": "module-items",
+    "path": "/assets/modules/items.png",
+    "category": "modules",
+    "width": 768,
+    "height": 341,
+    "transparent": "no",
+    "intended UI slot": "Workbench ITEMS module",
+    "generation prompt summary": "Chest, relic, blade, vessel inventory study art."
+  },
+  {
+    "id": "module-story",
+    "path": "/assets/modules/story.png",
+    "category": "modules",
+    "width": 768,
+    "height": 341,
+    "transparent": "no",
+    "intended UI slot": "Workbench STORY module",
+    "generation prompt summary": "Chronicle, scroll, route/prophesy study panel art."
+  },
+  {
+    "id": "element-air",
+    "path": "/assets/elements/air.png",
+    "category": "elements",
+    "width": 1024,
+    "height": 1024,
+    "transparent": "yes",
+    "intended UI slot": "Element badge / hero ace / filters",
+    "generation prompt summary": "Air glyph with wind, feather, pale cyan motion."
+  },
+  {
+    "id": "element-fire",
+    "path": "/assets/elements/fire.png",
+    "category": "elements",
+    "width": 1024,
+    "height": 1024,
+    "transparent": "yes",
+    "intended UI slot": "Element badge / hero ace / filters",
+    "generation prompt summary": "Fire glyph with ember, heat fractures, restrained amber."
+  },
+  {
+    "id": "element-water",
+    "path": "/assets/elements/water.png",
+    "category": "elements",
+    "width": 1024,
+    "height": 1024,
+    "transparent": "yes",
+    "intended UI slot": "Element badge / hero ace / filters",
+    "generation prompt summary": "Water glyph with waves, vessel, cyan reflective motion."
+  },
+  {
+    "id": "element-earth",
+    "path": "/assets/elements/earth.png",
+    "category": "elements",
+    "width": 1024,
+    "height": 1024,
+    "transparent": "yes",
+    "intended UI slot": "Element badge / hero ace / filters",
+    "generation prompt summary": "Earth glyph with stone, root, crystal stability."
+  },
+  {
+    "id": "room-entrance",
+    "path": "/assets/room-types/entrance.png",
+    "category": "room-types",
+    "width": 1024,
+    "height": 1024,
+    "transparent": "yes",
+    "intended UI slot": "Dungeon grid entrance",
+    "generation prompt summary": "Beginning threshold doorway icon."
+  },
+  {
+    "id": "room-exit",
+    "path": "/assets/room-types/exit.png",
+    "category": "room-types",
+    "width": 1024,
+    "height": 1024,
+    "transparent": "yes",
+    "intended UI slot": "Dungeon grid exit",
+    "generation prompt summary": "Positive green/mint gate portal exit icon, never red/X."
+  },
+  {
+    "id": "room-combat",
+    "path": "/assets/room-types/combat.png",
+    "category": "room-types",
+    "width": 1024,
+    "height": 1024,
+    "transparent": "yes",
+    "intended UI slot": "Dungeon grid combat room",
+    "generation prompt summary": "Crossed weapon combat icon."
+  },
+  {
+    "id": "room-treasure",
+    "path": "/assets/room-types/treasure.png",
+    "category": "room-types",
+    "width": 1024,
+    "height": 1024,
+    "transparent": "yes",
+    "intended UI slot": "Dungeon grid treasure room",
+    "generation prompt summary": "Relic chest treasure icon."
+  },
+  {
+    "id": "room-puzzle",
+    "path": "/assets/room-types/puzzle.png",
+    "category": "room-types",
+    "width": 1024,
+    "height": 1024,
+    "transparent": "yes",
+    "intended UI slot": "Dungeon grid puzzle room",
+    "generation prompt summary": "Astral mechanism / lock puzzle icon."
+  },
+  {
+    "id": "room-npc",
+    "path": "/assets/room-types/npc.png",
+    "category": "room-types",
+    "width": 1024,
+    "height": 1024,
+    "transparent": "yes",
+    "intended UI slot": "Dungeon grid NPC room",
+    "generation prompt summary": "Hooded traveler NPC icon."
+  },
+  {
+    "id": "room-story",
+    "path": "/assets/room-types/story.png",
+    "category": "room-types",
+    "width": 1024,
+    "height": 1024,
+    "transparent": "yes",
+    "intended UI slot": "Dungeon grid story room",
+    "generation prompt summary": "Open chronicle story icon."
+  },
+  {
+    "id": "room-rest",
+    "path": "/assets/room-types/rest.png",
+    "category": "room-types",
+    "width": 1024,
+    "height": 1024,
+    "transparent": "yes",
+    "intended UI slot": "Dungeon grid rest room",
+    "generation prompt summary": "Moon shelter camp rest icon."
+  },
+  {
+    "id": "room-shop",
+    "path": "/assets/room-types/shop.png",
+    "category": "room-types",
+    "width": 1024,
+    "height": 1024,
+    "transparent": "yes",
+    "intended UI slot": "Dungeon grid shop room",
+    "generation prompt summary": "Relic scales / market shop icon."
+  },
+  {
+    "id": "room-mystery",
+    "path": "/assets/room-types/mystery.png",
+    "category": "room-types",
+    "width": 1254,
+    "height": 1254,
+    "transparent": "yes",
+    "intended UI slot": "Dungeon grid mystery room",
+    "generation prompt summary": "Veiled portal mystery icon without question mark."
+  },
+  {
+    "id": "room-special",
+    "path": "/assets/room-types/special.png",
+    "category": "room-types",
+    "width": 1024,
+    "height": 1024,
+    "transparent": "yes",
+    "intended UI slot": "Dungeon grid special room",
+    "generation prompt summary": "Rare star-mechanism shrine special icon."
+  },
+  {
+    "id": "room-boss",
+    "path": "/assets/room-types/boss.png",
+    "category": "room-types",
+    "width": 1024,
+    "height": 1024,
+    "transparent": "yes",
+    "intended UI slot": "Dungeon grid boss room",
+    "generation prompt summary": "Guardian mask boss icon, separate from exit."
+  },
+  {
+    "id": "hero-air",
+    "path": "/assets/characters/hero-air.png",
+    "category": "characters",
+    "width": 615,
+    "height": 639,
+    "transparent": "no",
+    "intended UI slot": "Character / party builder Air hero",
+    "generation prompt summary": "Richer Air hero portrait, consistent elemental hero crop."
+  },
+  {
+    "id": "hero-fire",
+    "path": "/assets/characters/hero-fire.png",
+    "category": "characters",
+    "width": 615,
+    "height": 639,
+    "transparent": "no",
+    "intended UI slot": "Character / party builder Fire hero",
+    "generation prompt summary": "Richer Fire hero portrait, consistent elemental hero crop."
+  },
+  {
+    "id": "hero-water",
+    "path": "/assets/characters/hero-water.png",
+    "category": "characters",
+    "width": 615,
+    "height": 639,
+    "transparent": "no",
+    "intended UI slot": "Character / party builder Water hero",
+    "generation prompt summary": "Richer Water hero portrait, consistent elemental hero crop."
+  },
+  {
+    "id": "hero-earth",
+    "path": "/assets/characters/hero-earth.png",
+    "category": "characters",
+    "width": 615,
+    "height": 639,
+    "transparent": "no",
+    "intended UI slot": "Character / party builder Earth hero",
+    "generation prompt summary": "Richer Earth hero portrait, consistent elemental hero crop."
+  },
+  {
+    "id": "frozen-gate",
+    "path": "/assets/adventures/frozen-gate.png",
+    "category": "adventures",
+    "width": 1672,
+    "height": 941,
+    "transparent": "no",
+    "intended UI slot": "Adventure panel thumbnail",
+    "generation prompt summary": "The Frozen Gate Mesahara adventure environment, mint positive threshold."
+  },
+  {
+    "id": "mesahara-split-tower",
+    "path": "/assets/realm/mesahara-split-tower.png",
+    "category": "realm",
+    "width": 1536,
+    "height": 1024,
+    "transparent": "no",
+    "intended UI slot": "Realm hero / Mesahara landmark",
+    "generation prompt summary": "White stone and gold split tower/pyramid with deep blue, snow and desert."
+  },
+  {
+    "id": "monster-ash-scarab",
+    "path": "/assets/entities/monster-ash-scarab.png",
+    "category": "entities",
+    "width": 607,
+    "height": 647,
+    "transparent": "no",
+    "intended UI slot": "Entity library monster sample",
+    "generation prompt summary": "Ash Scarab fire common beetle with ember cracked volcanic shell."
+  },
+  {
+    "id": "monster-frost-beetle",
+    "path": "/assets/entities/monster-frost-beetle.png",
+    "category": "entities",
+    "width": 607,
+    "height": 647,
+    "transparent": "no",
+    "intended UI slot": "Entity library monster sample",
+    "generation prompt summary": "Frost Beetle ice/water beetle with crystalline blue-white carapace."
+  },
+  {
+    "id": "npc-frozen-cartographer",
+    "path": "/assets/entities/npc-frozen-cartographer.png",
+    "category": "entities",
+    "width": 607,
+    "height": 647,
+    "transparent": "no",
+    "intended UI slot": "Entity library NPC sample",
+    "generation prompt summary": "Frozen Cartographer Mesahara explorer with maps and instruments."
+  },
+  {
+    "id": "npc-scarab-keeper",
+    "path": "/assets/entities/npc-scarab-keeper.png",
+    "category": "entities",
+    "width": 607,
+    "height": 647,
+    "transparent": "no",
+    "intended UI slot": "Entity library NPC sample",
+    "generation prompt summary": "Scarab Keeper shrine caretaker with scarab relics and restrained gold/mint accents."
+  },
+  {
+    "id": "item-sandsteel-blade",
+    "path": "/assets/entities/item-sandsteel-blade.png",
+    "category": "entities",
+    "width": 612,
+    "height": 1284,
+    "transparent": "no",
+    "intended UI slot": "Entity library item sample",
+    "generation prompt summary": "Sandsteel Blade pale forged blade with restrained gold and blue-white reflections."
+  },
+  {
+    "id": "item-gate-sigil",
+    "path": "/assets/entities/item-gate-sigil.png",
+    "category": "entities",
+    "width": 613,
+    "height": 1284,
+    "transparent": "no",
+    "intended UI slot": "Entity library item sample",
+    "generation prompt summary": "Gate Sigil dimensional relic with mint portal geometry and crystalline seams."
+  },
+  {
+    "id": "crt-scanlines",
+    "path": "/assets/crt/scanlines.png",
+    "category": "crt",
+    "width": 1024,
+    "height": 1024,
+    "transparent": "yes",
+    "intended UI slot": "Global CRT overlay",
+    "generation prompt summary": "Subtle transparent CRT scanline texture."
+  },
+  {
+    "id": "crt-noise",
+    "path": "/assets/crt/noise.png",
+    "category": "crt",
+    "width": 1024,
+    "height": 1024,
+    "transparent": "yes",
+    "intended UI slot": "Global CRT overlay",
+    "generation prompt summary": "Subtle transparent phosphor noise texture."
+  },
+  {
+    "id": "crt-vignette",
+    "path": "/assets/crt/vignette.png",
+    "category": "crt",
+    "width": 2048,
+    "height": 1152,
+    "transparent": "yes",
+    "intended UI slot": "Global CRT overlay",
+    "generation prompt summary": "Transparent soft CRT edge vignette."
+  }
+]
