@@ -1010,8 +1010,7 @@ button.act {
 }
 
 .pane-grid.dimmed-behind-combat {
-  opacity: 0.35;
-  pointer-events: none;
+  opacity: 0.55;
 }
 
 /* —— Character select —— */
@@ -1264,5 +1263,319 @@ button.act {
   .board,
   .rt {
     grid-template-columns: 1fr;
+  }
+}
+
+/* —— Player view (parked experiment; App uses PlayerTable) —— */
+.player-view {
+  position: relative;
+  margin-top: 10px;
+  padding: 16px 14px 20px;
+  border: 1px solid #8a7020;
+  border-radius: 14px;
+  background: #0a1220;
+  color: #e8eef8;
+  min-height: 70vh;
+}
+
+.pv-top {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.pv-brand {
+  display: flex;
+  flex-direction: column;
+  font-family: Georgia, Cinzel, serif;
+}
+
+.pv-brand strong {
+  font-size: 22px;
+  letter-spacing: 0.12em;
+  color: #f0d78c;
+}
+
+.pv-brand span {
+  font-size: 12px;
+  color: #8a9bb5;
+  letter-spacing: 0.08em;
+}
+
+.pv-dial {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px solid #d4af37;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+  background: #0a1220;
+  box-shadow: 0 0 24px rgba(212, 175, 55, 0.25);
+}
+
+.pv-dial-sun,
+.pv-dial-moon {
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+}
+
+.pv-dial-sun {
+  background: linear-gradient(160deg, #c9a227, #5a430c);
+}
+
+.pv-dial-moon {
+  background: linear-gradient(200deg, #1a3050, #0a1220);
+}
+
+.pv-dial[data-dial="day"] .pv-dial-sun {
+  box-shadow: inset 0 0 12px rgba(255, 220, 120, 0.55);
+}
+
+.pv-dial[data-dial="night"] .pv-dial-moon {
+  box-shadow: inset 0 0 12px rgba(140, 190, 255, 0.45);
+}
+
+.pv-status {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pv-status b {
+  color: #f7f0d8;
+  font-size: 14px;
+}
+
+.pv-status span {
+  color: #8a9bb5;
+  font-size: 12px;
+}
+
+.pv-party {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.pv-seat {
+  padding: 10px;
+  border: 1px solid #3a4a62;
+  border-radius: 10px;
+  background: rgba(10, 18, 32, 0.78);
+}
+
+.pv-seat.active {
+  border-color: #f0d78c;
+}
+
+.pv-seat.you {
+  background: rgba(36, 28, 8, 0.55);
+}
+
+.pv-seat.down {
+  opacity: 0.45;
+}
+
+.pv-seat-name {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #d4af37;
+}
+
+.pv-hearts {
+  margin: 4px 0;
+  color: #e23d48;
+  letter-spacing: 0.12em;
+  font-size: 16px;
+}
+
+.pv-aspect {
+  font-family: Georgia, Cinzel, serif;
+  font-size: 13px;
+  color: #f7f0d8;
+  margin-bottom: 6px;
+}
+
+.pv-lineage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.pv-table {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px;
+  align-items: center;
+  margin: 8px 0 16px;
+}
+
+.pv-seats-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+}
+
+.pv-pile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: #8a9bb5;
+  font-size: 12px;
+}
+
+.pv-pile-face {
+  width: 72px;
+  height: 104px;
+  border-radius: 8px;
+  border: 1px solid #8a7020;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.pv-pile-face.draw {
+  background: linear-gradient(165deg, #1a3a6a, #0a1628);
+  color: #f0d78c;
+}
+
+.pv-pile-face.veil {
+  background: linear-gradient(165deg, #3a3a48, #1a1a22);
+  color: #c8d2e0;
+}
+
+.pv-altar {
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  border: 1px solid #5a430c;
+  border-radius: 12px;
+  background: rgba(36, 28, 8, 0.45);
+}
+
+.pv-altar-label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #d4af37;
+  margin-bottom: 8px;
+}
+
+.pv-altar-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.pv-bottom {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.7fr) minmax(280px, 1.6fr) minmax(140px, 0.7fr);
+  gap: 12px;
+  align-items: end;
+}
+
+.pv-log {
+  padding: 10px;
+  border: 1px solid #3a4a62;
+  border-radius: 10px;
+  background: rgba(10, 18, 32, 0.8);
+  min-height: 120px;
+  max-height: 180px;
+  overflow: auto;
+}
+
+.pv-log-title,
+.pv-hand-title {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #d4af37;
+  margin-bottom: 6px;
+}
+
+.pv-log ol {
+  margin: 0;
+  padding-left: 16px;
+  color: #8a9bb5;
+  font-size: 12px;
+}
+
+.pv-hand-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pv-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pv-act {
+  border: 1px solid #8a7020;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: #0a1220;
+}
+
+.pv-act.discover {
+  background: #3a7ab8;
+  border-color: #7ec8ff;
+  color: #f7f0d8;
+}
+
+.pv-act.commit {
+  background: #c9a227;
+  border-color: #f0d78c;
+}
+
+.pv-act.take {
+  background: #3d8a5a;
+  border-color: #8fd4a8;
+  color: #f7f0d8;
+}
+
+.pv-act.leave {
+  background: #4a5568;
+  border-color: #8a9bb5;
+  color: #f7f0d8;
+}
+
+.pv-act.other {
+  background: #241c08;
+  border-color: #d4af37;
+  color: #f0d78c;
+}
+
+.pv-empty {
+  color: #8a9bb5;
+  font-size: 12px;
+}
+
+@media (max-width: 900px) {
+  .pv-top,
+  .pv-table,
+  .pv-bottom {
+    grid-template-columns: 1fr;
+  }
+
+  .pv-status {
+    text-align: left;
   }
 }

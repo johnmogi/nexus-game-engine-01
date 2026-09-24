@@ -9,7 +9,7 @@ Compressed art lives in git. Drop **new originals** in `_source/` (gitignored) o
 | `cards/sunlight/roses` `vines` `vessels` `crystals` | Sun minor ranks |
 | `cards/moonlight/air` `fire` `water` `earth` | Moon minor ranks |
 | `cards/majors/` | 20 Majors: `{id}.jpg` e.g. `SUN-MAJ-02.jpg`. Rank 0 Nexus; #1 and #3 are characters |
-| `ui/` | Lab / HUD chrome + layout mocks |
+| `ui/` | Lab / HUD chrome + layout mocks (`table-mock.jpg`, `combat-mock.jpg`, `hud-kit.jpg`) |
 | `inbox/` | Unsorted; do not leave files here long |
 
 **Filenames (Lab resolves these):**

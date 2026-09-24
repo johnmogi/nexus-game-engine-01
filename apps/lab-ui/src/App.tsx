@@ -377,7 +377,7 @@ export function App() {
   }
 
   return (
-    <div className={`lab${view === "player" ? " lab-player" : ""}`}>
+    <div className="lab">
       <header className="toolbar">
         <div className="toolbar-main">
         <label>

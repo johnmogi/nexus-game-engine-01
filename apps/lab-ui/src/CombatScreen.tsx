@@ -20,9 +20,11 @@ export function CombatScreen(props: {
   legal: Action[];
   canPlay: boolean;
   fog?: boolean;
+  viewerId?: string;
   onAct: (a: Action) => void;
 }) {
   const { state, ctx, legal, canPlay, fog, onAct } = props;
+  const viewerId = props.viewerId ?? state.meta.activePlayerId;
   const prompt = eventPrompt(state, ctx);
   if (prompt.kind !== "barrier" && prompt.kind !== "dialogue") return null;
 
@@ -141,16 +143,16 @@ export function CombatScreen(props: {
                             <Card
                               key={c.instanceId}
                               title="hand"
-                              card={fogCard(c, fog && p.id !== state.meta.activePlayerId)}
-                              note={forceNote(ctx, c, fog)}
+                              card={fogCard(c, fog && p.id !== viewerId)}
+                              note={forceNote(ctx, c, fog && p.id !== viewerId)}
                               size="lg"
-                              selectable={canPlay}
-                              onClick={canPlay ? () => onAct(act) : undefined}
+                              selectable={canPlay && p.id === viewerId}
+                              onClick={canPlay && p.id === viewerId ? () => onAct(act) : undefined}
                             />
                           );
                         })}
                       </div>
-                      {passFor(p.id) ? (
+                      {passFor(p.id) && p.id === viewerId ? (
                         <button
                           type="button"
                           className="act combat-act"

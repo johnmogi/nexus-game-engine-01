@@ -203,16 +203,25 @@ export function PlayerTable(props: {
       </div>
 
       {inCombat ? (
-        <CombatScreen state={state} ctx={ctx} legal={legal} canPlay={canPlay} fog={fog} onAct={onAct} />
+        <CombatScreen
+          state={state}
+          ctx={ctx}
+          legal={legal}
+          canPlay={canPlay}
+          fog={fog}
+          viewerId={viewerId}
+          onAct={onAct}
+        />
       ) : null}
 
-      <div className={`pane-grid${inCombat ? " dimmed-behind-combat" : ""}`}>
+      <div className="pane-grid">
         <div className="pane pane-play">
           <h2 className="pane-title">Play area</h2>
           <p className="pane-meta">
             {state.meta.activePlayerId} · {state.meta.phase} · R{state.meta.round} T{state.meta.turn}/
             {state.meta.maxTurns}
             {ctx.ruleset.experimental.enableDayDial ? ` · ${state.meta.dial}` : ""}
+            {fog ? " · seat fog" : " · god eyes"}
           </p>
 
           <div className="rt">
@@ -371,10 +380,14 @@ export function PlayerTable(props: {
         </div>
       ) : null}
 
-      {!inCombat && !characterPicks.length ? (
+      {!characterPicks.length ? (
         <div className="pane pane-advisor">
           <h2 className="pane-title">Advisor</h2>
-          <p>{advisorCopy(state, ctx, prompt)}</p>
+          <p>
+            {inCombat
+              ? "Combat is live — commit from the bowl above, or use the buttons here."
+              : advisorCopy(state, ctx, prompt)}
+          </p>
           <ActButtons legal={legal} state={state} canPlay={canPlay} onAct={onAct} />
         </div>
       ) : null}
